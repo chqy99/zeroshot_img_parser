@@ -2,14 +2,36 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import gui_window
 import numpy as np
-from tkinter import simpledialog
+from tkinter import ttk, simpledialog
 
 from use_sam2 import SAM2Segmenter
-from vector_store import ChromadbVectorStore
-from image_entity import ImageAnnotation
+from image_vector_store import ChromadbVectorStore
 from image_tools import ImageVisualizer, MaskHandler
 
 segmenter = SAM2Segmenter()
+
+class CustomDialog(simpledialog.Dialog):
+    def body(self, master):
+        # 添加一个标签和组合框来选择描述类型
+        tk.Label(master, text="describe type (optional):").grid(row=0, sticky="w")
+        self.describe_type_var = tk.StringVar()
+        self.combobox = ttk.Combobox(master, textvariable=self.describe_type_var)
+        self.combobox.grid(row=1, sticky="w")
+        self.combobox['values'] = ("原图像", "掩膜图像")  # 示例选项
+        self.combobox.current(0)  # 默认选中第一个选项
+
+        # 如果你还需要让用户输入描述文本，可以添加一个输入框
+        tk.Label(master, text="describe:").grid(row=2, sticky="w")
+        self.describe_entry = tk.Entry(master)
+        self.describe_entry.grid(row=3, sticky="w")
+
+        return self.describe_entry  # 返回初始焦点组件
+
+    def apply(self):
+        # 获取用户输入的描述和描述类型
+        self.describe = self.describe_entry.get()
+        self.describe_type = self.describe_type_var.get()
+
 
 class TransparentOverlay:
     def __init__(self, left, top, width, height, window_title, segmenter: SAM2Segmenter):
@@ -67,7 +89,7 @@ class TransparentOverlay:
         monitor = {"left": self._left, "top": self._top, "width": self._width, "height": self._height}
         screenshot = gui_window.get_screenshot(monitor)
         self.segmenter.set_image(screenshot)
-        self.image_annotation = ImageAnnotation(screenshot)
+        self.image_annotation = self.vector_store.query_image_item(screenshot)
 
     def on_mouse_down(self, event):
         # 记录鼠标按下位置
@@ -160,13 +182,15 @@ class TransparentOverlay:
             self.visualize(visual_mask, bboxs)
 
     def save_in_chromadb(self, event):
-        # 弹出对话框输入注释
-        comment = simpledialog.askstring("Input", "Enter a describe for the whole image:", parent=self.root)
-        if comment is None:
-            return  # 用户取消输入
+        # 弹出对话框输入注释和描述类型
+        dialog = CustomDialog(self.root)
+        if not dialog.describe:  # 如果用户取消输入或未填写描述
+            return
         meta_data = self.image_annotation.meta_data
         meta_data["window_title"] = window_title
-        meta_data["describe"] = comment
+        meta_data["describe"] = dialog.describe
+        meta_data["describe_type"] = dialog.describe_type if dialog.describe_type else None  # 如果描述类型为空则设为 None
+        print(meta_data["describe_type"])
         self.vector_store.add_image_item(self.image_annotation)
 
     def run(self):

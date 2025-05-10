@@ -99,23 +99,32 @@ class MultiFormatImage:
     def __repr__(self):
         return f"<MultiFormatImage shape=({self.H}, {self.W}, {self.C}) mode={self.mode}>"
 
+import ast
 import uuid
-from typing import Optional
+from typing import Optional, Dict
 
 class ImageAnnotation:
-    def __init__(self, image, id: Optional[str] = None):
+    def __init__(self, image, id: Optional[str] = None, metadata: Dict[str, any] = {}):
         self.image_format = MultiFormatImage(image)
         self.id = id if id is not None else str(uuid.uuid4())
-        self.meta_data = {}
+        self.meta_data = metadata
         self.meta_data["height"] = self.image_format.H
         self.meta_data["width"] = self.image_format.W
         self.meta_data["channel"] = self.image_format.C
         self.meta_data["describe"] = ""
         self.labels = np.zeros((self.image_format.H, self.image_format.W), dtype=np.uint8)
         self.classes_num = 0
+        if "classes_num" in metadata:
+            self.classes_num = metadata["classes_num"]
         self.bboxs = []
+        if "bboxs" in metadata:
+            self.bboxs = ast.literal_eval(metadata["bboxs"])
         self.classes_describe = []
+        if "classes_describe" in metadata:
+            self.classes_describe = ast.literal_eval(metadata["classes_describe"])
         self.filepath = ""
+        if "filepath" in metadata:
+            self.filepath = metadata["filepath"]
 
     def add_one_class(self, mask: np.ndarray, describe: str):
         self.classes_num += 1
@@ -135,14 +144,15 @@ class ImageAnnotation:
         self.meta_data["filepath"] = self.filepath
 
     def get_chromadb_item(self):
-        self.collect_meta_data()
         # 如果文件不存在，按当前时间保存
         if self.filepath == "":
             from datetime import datetime
             now = datetime.now()
             time_str = now.strftime("%Y-%m-%d_%H-%M-%S.%f")[:-3]
             self.save(time_str)
-        return self.id, self.meta_data, self.filepath
+
+        self.collect_meta_data()
+        return self.id, self.meta_data, self.image_format.get()
 
     def save(self, filename):
         from xc_config import _xc_image_dir
