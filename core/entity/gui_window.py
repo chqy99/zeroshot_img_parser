@@ -24,18 +24,30 @@ def get_window(window_title: str, title_idx: int):
     time.sleep(0.2)
     return window
 
+# 从序号 1 开始
 def get_monitor(idx=1):
     with mss.mss() as sct:
         return sct.monitors[idx]
 
-def get_screenshot(shot_rect: dict) -> np.array:
+def get_screenshot(shot_rect: dict, mode: str = 'BGR') -> np.array:
     with mss.mss() as sct:
         screenshot = sct.grab(shot_rect)
 
-    screenshot_array = np.array(screenshot)
+    bgra_array = np.array(screenshot)
     # 转成 rgb 需要深拷贝，影响性能
-    bgr_array = screenshot_array[:, :, :3]
-    return bgr_array
+    if mode == 'BGR':
+        result = bgra_array[:, :, :3]
+    elif mode == 'RGB':
+        result = bgra_array[:, :, :3][:, :, ::-1].copy()
+    elif mode == 'RGBA':
+        result = np.zeros_like(bgra_array)
+        result[:, :, 0] = bgra_array[:, :, 2]  # R
+        result[:, :, 1] = bgra_array[:, :, 1]  # G
+        result[:, :, 2] = bgra_array[:, :, 0]  # B
+        result[:, :, 3] = bgra_array[:, :, 3]  # A
+    else:
+        result = bgra_array
+    return result
 
 def save_screenshot(shot_rect: dict, filepath: str):
     with mss.mss() as sct:
