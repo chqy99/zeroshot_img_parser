@@ -1,8 +1,14 @@
 import numpy as np
 import uuid
 from typing import Optional
+import abc
 
-class ImageEntity:
+class ImageInstance:
+    def __init__(self, image):
+        self.image: np.array = image
+
+
+class ImageAnalyseResult:
     def __init__(self, image: np.ndarray):
         # 原始图像
         self.image: np.ndarray = image
@@ -32,3 +38,23 @@ class ImageEntity:
             "channel": self.channel
         }
 
+class ImageAnalyse(abc.ABC):
+    @abc.abstractmethod
+    def analyse_ocr(self, image, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def analyse_edge(self, image, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def analyse_one_instance(self, image, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def analyse_instance_segm(self, image, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def analyse_multi_method(self, image, **kwargs):
+        pass

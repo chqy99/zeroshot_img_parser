@@ -3,8 +3,8 @@ from tkinter import ttk, simpledialog
 from PIL import ImageTk
 import threading
 
-import entity.gui_window as gui_window
-from entity.image_entity import ImageEntity
+import gui.gui_window as gui_window
+from image_module.image_analyse import ImageAnalyseResult
 
 class TransparentOverlay:
     def __init__(self, root, show_datagrid_data):
@@ -53,7 +53,7 @@ class TransparentOverlay:
 
         # 截图
         self.capture_screenshot()
-        self.image_entity = ImageEntity(self.screenshot)
+        self.image_entity = ImageAnalyseResult(self.screenshot)
 
         # 静态判断
         if use_model_vals[0] == True:

@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk, simpledialog
 import threading
 
-import entity.gui_window as gui_window
-from entity.image_entity import ImageEntity
+import gui.gui_window as gui_window
+from image_module.image_analyse import ImageAnalyseResult
 import ui.transparent_overlay as transparent_overlay
 
 class ImageTk:
@@ -133,7 +133,7 @@ class ImageTk:
         self.combobox['values'] = self.options
         self.combobox.bind("<<ComboboxSelected>>", self.on_window_selected)
 
-    def show_datagrid_data(self, image_entity: ImageEntity):
+    def show_datagrid_data(self, image_entity: ImageAnalyseResult):
         """加载表格数据"""
         self.image_entity = image_entity
         self.clear_datagrid()
