@@ -3,7 +3,7 @@ from tkinter import ttk, simpledialog
 import threading
 
 import gui.gui_window as gui_window
-from image_module.image_analyse import ImageAnalyseResult
+from xc_image.core.image_module.image_dataclass import ImageAnalyseResult
 import ui.transparent_overlay as transparent_overlay
 
 class ImageTk:

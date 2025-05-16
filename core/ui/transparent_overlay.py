@@ -4,7 +4,7 @@ from PIL import ImageTk
 import threading
 
 import gui.gui_window as gui_window
-from image_module.image_analyse import ImageAnalyseResult
+from xc_image.core.image_module.image_dataclass import ImageAnalyseResult
 
 class TransparentOverlay:
     def __init__(self, root, show_datagrid_data):
