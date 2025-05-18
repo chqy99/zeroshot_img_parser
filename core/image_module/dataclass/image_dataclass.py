@@ -1,24 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Tuple
+from typing import Optional, List
 import numpy as np
-
-@dataclass
-class BoundingBox:
-    """
-    Represents a rectangular region relative to the original image.
-    Coordinates: (x_min, y_min, x_max, y_max).
-    """
-    x_min: int
-    y_min: int
-    x_max: int
-    y_max: int
-
-    def width(self) -> int:
-        return self.x_max - self.x_min
-
-    def height(self) -> int:
-        return self.y_max - self.y_min
-
 
 @dataclass
 class ImageInstance:
@@ -61,13 +43,13 @@ class ImageAnalysisResult:
     """
     original: ImageInstance
     instances: List[ImageInstance] = field(default_factory=list)
-    bbox_list: List[BoundingBox] = field(default_factory=list)
+    bbox_list: List[list] = field(default_factory=list)
 
     @property
     def instance_num(self) -> int:
         return len(self.instances)
 
-    def add_instance(self, inst: ImageInstance, bbox: BoundingBox) -> None:
+    def add_instance(self, inst: ImageInstance, bbox: list) -> None:
         """
         Add a detected sub-instance and its relative bounding box.
         """

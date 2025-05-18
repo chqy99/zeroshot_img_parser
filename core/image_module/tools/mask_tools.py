@@ -1,13 +1,6 @@
-from PIL import Image
 import numpy as np
-import math
 
-from tools.color_tools import generate_palette
-
-
-class MaskHandler:
-    @staticmethod
-    def mask_to_bbox(mask):
+def mask_to_bbox(mask):
         """
         将二值分割掩码转换为边界框坐标（左上角和右下角坐标）。
 
@@ -33,28 +26,3 @@ class MaskHandler:
         x2 = cols[-1]
 
         return [x1, y1, x2, y2]
-
-    @staticmethod
-    def visualize_masks(num, mask, palette = None):
-        if num == 0 or mask is None:
-            return None
-
-        # 颜色表
-        if palette is None:
-            _palette = generate_palette(math.ceil(num / 8) * 8)
-        else:
-            _palette = palette
-
-        # 初始化彩色掩码图像，添加 alpha 通道
-        colored_mask = np.zeros((mask.shape[0], mask.shape[1], 4), dtype=np.uint8)
-
-        # 应用颜色到每个类别
-        for idx in range(1, num + 1):  # 从1开始，因为0是背景
-            if idx < len(_palette):
-                color = _palette[idx-1] + (150,)  # 添加透明度
-                colored_mask[mask == idx] = color
-
-        # 创建图像
-        colored_mask_img = Image.fromarray(colored_mask, mode="RGBA")
-
-        return colored_mask_img

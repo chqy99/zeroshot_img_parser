@@ -1,22 +1,2 @@
-import abc
 
-class ImageAnalyse(abc.ABC):
-    @abc.abstractmethod
-    def analyse_ocr(self, image, **kwargs):
-        pass
-
-    @abc.abstractmethod
-    def analyse_edge(self, image, **kwargs):
-        pass
-
-    @abc.abstractmethod
-    def analyse_one_instance(self, image, **kwargs):
-        pass
-
-    @abc.abstractmethod
-    def analyse_instance_segm(self, image, **kwargs):
-        pass
-
-    @abc.abstractmethod
-    def analyse_multi_method(self, image, **kwargs):
-        pass
+# 组合 zeroshot_seg(sam2), ocr, zeroshot_classify, 多模态model 来预测 image_dataclass
