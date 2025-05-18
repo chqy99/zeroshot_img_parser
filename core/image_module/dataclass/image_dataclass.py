@@ -1,8 +1,6 @@
-from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, List, Tuple
 import numpy as np
-import uuid
 
 @dataclass
 class BoundingBox:
@@ -29,11 +27,10 @@ class ImageInstance:
     No position information is stored here.
     """
     image: np.ndarray
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     height: int = field(init=False)
     width: int = field(init=False)
     channel: int = field(init=False)
-    key: str = ""
+    class_name: Optional[str] = None
     description: Optional[str] = None
     mask: Optional[np.ndarray] = None
     mask_image: Optional[np.ndarray] = None
@@ -76,18 +73,3 @@ class ImageAnalysisResult:
         """
         self.instances.append(inst)
         self.bbox_list.append(bbox)
-
-    def summary(self) -> str:
-        """
-        Return a concise summary of the analysis, including relative positions.
-        """
-        lines = [
-            f"Original: {self.original.id}, size={self.original.width}x{self.original.height}",
-        ]
-        for idx, (inst, bbox) in enumerate(zip(self.instances, self.bbox_list), 1):
-            key = inst.key or "<[Unnamed]>"
-            coords = f"({bbox.x_min},{bbox.y_min},{bbox.x_max},{bbox.y_max})"
-            lines.append(
-                f"#{idx}: id={inst.id}, key={key}, bbox={coords}"
-            )
-        return "\n".join(lines)

@@ -1,0 +1,4 @@
+sam2_config_file: 'configs/sam2.1/sam2.1_hiera_1.yaml'
+sam2_checkpoint_file: 'checkpoints/sam2.1/sam2.1_hiera_large.pt'
+memory_vectorstore: 'E:/xingchen/memory_data/chroma_db'
+memory_image_dir: 'E:/xingchen/memory_data/images'
