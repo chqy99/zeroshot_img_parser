@@ -1,9 +1,8 @@
 import torch
 from transformers import (
-    BlipProcessor,
-    BlipForConditionalGeneration,
-    CLIPProcessor,
-    CLIPModel
+    AutoProcessor,
+    AutoModelForVisualQuestionAnswering,
+    AutoModelForZeroShotImageClassification
 )
 import os
 
@@ -25,15 +24,15 @@ class MaskCategoryPredictor:
     ):
         # 加载 BLIP-2
         self.device = device
-        self.blip_processor = BlipProcessor.from_pretrained(blip_model_name)
+        self.blip_processor = AutoProcessor.from_pretrained(blip_model_name)
         self.blip_model = (
-            BlipForConditionalGeneration.from_pretrained(blip_model_name)
+            AutoModelForVisualQuestionAnswering.from_pretrained(blip_model_name)
                 .to(device)
         )
         # 加载 CLIP
-        self.clip_processor = CLIPProcessor.from_pretrained(clip_processor_path)
+        self.clip_processor = AutoProcessor.from_pretrained(clip_processor_path)
         self.clip_model = (
-            CLIPModel.from_pretrained(clip_model_path)
+            AutoModelForZeroShotImageClassification.from_pretrained(clip_model_path)
                 .to(device)
         )
 
@@ -151,5 +150,5 @@ if __name__ == "__main__":
     image = np.array(Image.open(r'E:\xingchen\memory_data\images\2025-05-06_21-20-00.856.png').convert('RGB'))
 
     masks = segm.predict_whole_image(image)
-    result = predictor.predict(image, masks, categories=["icon", "ocr", "unknown"])
-    print(result["descriptions"], result["categories"])
+    result = predictor.predict(image, masks)
+    print(result["descriptions"])
