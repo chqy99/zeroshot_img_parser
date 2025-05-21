@@ -12,6 +12,7 @@ class ImageInstance:
     height: int = field(init=False)
     width: int = field(init=False)
     channel: int = field(init=False)
+    source: Optional[str] = None
     class_name: Optional[str] = None
     description: Optional[str] = None
     mask: Optional[np.ndarray] = None

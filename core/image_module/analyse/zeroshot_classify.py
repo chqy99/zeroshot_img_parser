@@ -57,7 +57,7 @@ class MaskCategoryPredictor:
             regions.append(region)
         return regions
 
-    def describe_regions(self, regions: list, max_length: int = 40) -> list:
+    def describe_regions(self, regions: list, max_length: int = 128) -> list:
         """
         使用 BLIP-2 为每个区域生成自由描述。
 
@@ -111,7 +111,7 @@ class MaskCategoryPredictor:
         image: torch.Tensor,
         masks: list,
         categories: list = None,
-        max_length: int = 40
+        max_length: int = 128
     ) -> dict:
         """
         对 masks 中的每个区域进行描述和/或分类。
