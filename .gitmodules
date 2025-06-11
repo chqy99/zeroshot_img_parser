@@ -1,0 +1,3 @@
+[submodule "core/imgdata"]
+path = core/imgdata
+url = https://github.com/chqy99/imgdata.git
