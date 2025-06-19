@@ -1,0 +1,13 @@
+paddleocr:
+  preload: true
+  det: ''
+  rec: ''
+  cls: ''
+sam2:
+  preload: true
+  model_cfg: 'configs/sam2.1/sam2.1_hiera_1.yaml'
+  checkpoint: 'checkpoints/sam2.1/sam2.1_hiera_large.pt'
+clip:
+  preload: false
+  processor: 'checkpoints/clip-vit-base-patch32/processor'
+  model: 'checkpoints/clip-vit-base-patch32/model'
