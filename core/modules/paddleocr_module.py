@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from imgdata.structure import ImageObject, ImageParseResult
+from imgdata.imgdata.structure import ImageObject, ImageParseResult
 from base import BaseModule
 
 class PaddleOCRModule(BaseModule):

@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List
-from imgdata.structure import ImageObject
+from imgdata.imgdata.structure import ImageObject
 from base import BaseModule
 
 class GroundingDinoModule(BaseModule):
