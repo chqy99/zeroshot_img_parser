@@ -36,7 +36,7 @@ class LazyModel:
 
 
 class ModelLoader:
-    def __init__(self, config_path=None, device: str = None):
+    def __init__(self, config_path=None, device: str = "cuda"):
         config_path = config_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "../../configs/model_config.yaml"
@@ -44,7 +44,7 @@ class ModelLoader:
         with open(config_path, 'r') as f:
             self.models_cfg = yaml.safe_load(f)
 
-        self.device = device or self.cfg.get("device", "cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device
         self.models = {}
 
     def get_model(self, name):
@@ -88,7 +88,7 @@ class ModelLoader:
         checkpoint = cfg.get("checkpoint")
         if model_cfg is None or checkpoint is None:
             raise ValueError("sam2模型加载需要 model_cfg 和 checkpoint 路径")
-        model = build_sam2(model_cfg, checkpoint)
+        model = build_sam2(str(model_cfg), str(checkpoint))
         return model
 
     def _load_clip(self, cfg):

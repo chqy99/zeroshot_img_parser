@@ -5,7 +5,7 @@ paddleocr:
   cls: ''
 sam2:
   preload: true
-  model_cfg: 'configs/sam2.1/sam2.1_hiera_1.yaml'
+  model_cfg: 'configs/sam2.1/sam2.1_hiera_l.yaml'
   checkpoint: 'checkpoints/sam2.1/sam2.1_hiera_large.pt'
 clip:
   preload: false
