@@ -27,6 +27,8 @@ class LazyModel:
         model = self._load_model()
         return getattr(model, attr)
 
+    def __getitem__(self, item):
+        return self._load_model()[item]
 
 class ModelLoader:
     def __init__(self, config_path=None, device: str = "cuda"):
@@ -83,9 +85,10 @@ class ModelLoader:
     def _load_clip(self, cfg, device):
         processor_path = cfg.get("processor")
         model_path = cfg.get("model")
+        label_texts = cfg.get("label_texts", [])
         if processor_path is None or model_path is None:
             raise ValueError("clip模型加载需要 processor 和 model 路径")
 
         processor = AutoProcessor.from_pretrained(processor_path)
         model = AutoModelForZeroShotImageClassification.from_pretrained(model_path).to(device)
-        return {"processor": processor, "model": model}
+        return {"processor": processor, "model": model, "label_texts": label_texts}

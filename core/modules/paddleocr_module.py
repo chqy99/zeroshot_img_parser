@@ -6,8 +6,8 @@ from base import BaseModule
 from model_config import ModelLoader
 
 class PaddleOCRModule(BaseModule):
-    def __init__(self, model = ModelLoader().get_model('paddleocr')):
-        self.reader = model
+    def __init__(self, model=None):
+        self.reader = model or ModelLoader().get_model('paddleocr')
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         result = self.reader.predict(image)

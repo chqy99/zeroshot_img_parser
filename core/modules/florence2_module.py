@@ -9,9 +9,5 @@ class Florence2Module(EnricherModule):
         self.model = model
         self.processor = processor
 
-    def parse(self, objects: List[ImageObject], image: np.ndarray, **kwargs) -> List[ImageObject]:
-        for obj in objects:
-            crop = obj.crop_from(image)
-            description = self.model.describe(crop)
-            obj.description = description
-        return objects
+    def parse(self, objects: List[ImageObject], **kwargs) -> List[ImageObject]:
+        pass

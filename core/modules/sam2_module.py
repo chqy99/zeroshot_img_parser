@@ -8,8 +8,8 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 
 class SamModule(BaseModule):
-    def __init__(self, sam_model = ModelLoader().get_model("sam2")):
-        self.model = sam_model
+    def __init__(self, sam_model = None):
+        self.model = sam_model or ModelLoader().get_model("sam2")
         self.mask_generator = SAM2AutomaticMaskGenerator(self.model)
         self.predictor = SAM2ImagePredictor(self.model)
 

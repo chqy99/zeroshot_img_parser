@@ -10,5 +10,5 @@ class BaseModule(ABC):
 
 class EnricherModule(ABC):
     @abstractmethod
-    def parse(self, objects: ImageParseResult, image: np.ndarray, **kwargs) -> ImageParseResult:
+    def parse(self, objects: ImageParseResult, **kwargs) -> ImageParseResult:
         pass
