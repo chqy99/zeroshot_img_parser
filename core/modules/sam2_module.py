@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from typing import List
-from imgdata.imgdata.structure import ImageObject, ImageParseResult
+from imgdata.imgdata.structure import BBox, ImageObject, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 from sam2.build_sam import build_sam2
@@ -16,7 +16,16 @@ class SamModule(BaseModule):
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         res = self.mask_generator.generate(image)
-        return ImageParseResult.from_sam2(image, res)
+        parse_res = ImageParseResult(full_image=image)
+        for item in res:
+            mask = item['segmentation']
+            bbox_input = item['bbox']
+            bbox = BBox(bbox_input[0], bbox_input[1],
+                        bbox_input[0] + bbox_input[2],
+                        bbox_input[1] + bbox_input[3])
+            score = item["stability_score"]
+            parse_res.objects.append(ImageObject.from_mask(image, mask, bbox=bbox, score=score, source_module='sam2'))
+        return parse_res
 
     def parse_with_prompts(self, image: np.ndarray, prompts=None, **kwargs) -> ImageObject:
         self.predictor.set_image(image)
@@ -27,8 +36,7 @@ class SamModule(BaseModule):
                 masks, scores, _ = self.predictor.predict()
 
         max_index = np.argmax(scores)
-        mask = masks[max_index]
-        return ImageObject.from_mask(image, mask)
+        return ImageObject.from_mask(image, masks[max_index], score=scores[max_index], source_module='sam2')
 
 if __name__ == "__main__":
     sam_module = SamModule()
