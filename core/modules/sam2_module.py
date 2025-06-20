@@ -4,7 +4,6 @@ from typing import List
 from imgdata.imgdata.structure import BBox, ImageObject, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
-from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 
