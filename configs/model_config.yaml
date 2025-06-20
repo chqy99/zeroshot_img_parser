@@ -1,8 +1,6 @@
 paddleocr:
   preload: true
-  det: ''
-  rec: ''
-  cls: ''
+  paddlex_config: 'configs/paddleocr_config.yaml'
 sam2:
   preload: true
   model_cfg: 'configs/sam2.1/sam2.1_hiera_l.yaml'

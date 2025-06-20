@@ -78,10 +78,8 @@ class ModelLoader:
 
     # 各模型加载函数，仅负责加载，不转设备
     def _load_paddleocr(self, cfg):
-        return PaddleOCR(lang="ch", use_angle_cls=True,
-                         det_model_dir=cfg.get("det"),
-                         rec_model_dir=cfg.get("rec"),
-                         cls_model_dir=cfg.get("cls"))  # use_gpu由device统一控制
+        model = PaddleOCR(paddlex_config=cfg.get("paddlex_config", None))
+        return model
 
     def _load_sam2(self, cfg):
         model_cfg = cfg.get("model_cfg")
