@@ -25,3 +25,7 @@ clip:
     - 'file'
     - 'date'
     - 'time'
+florence2:
+  preload: false
+  processor: 'microsoft/Florence-2-large'
+  model: 'microsoft/Florence-2-large'

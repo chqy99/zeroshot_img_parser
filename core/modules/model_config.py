@@ -6,6 +6,7 @@ from paddleocr import PaddleOCR
 from transformers import (
     AutoProcessor,
     AutoModelForZeroShotImageClassification,
+    AutoModelForCausalLM
 )
 
 from sam2.build_sam import build_sam2  # 你的sam2加载接口
@@ -92,3 +93,15 @@ class ModelLoader:
         processor = AutoProcessor.from_pretrained(processor_path)
         model = AutoModelForZeroShotImageClassification.from_pretrained(model_path).to(device)
         return {"processor": processor, "model": model, "label_texts": label_texts}
+
+    def _load_florence2(self, cfg, device):
+        processor_path = cfg.get("processor")
+        model_path = cfg.get("model")
+
+        if processor_path is None or model_path is None:
+            raise ValueError("Florence2模型加载需要 processor 和 model 路径")
+
+        processor = AutoProcessor.from_pretrained(processor_path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
+
+        return {"processor": processor, "model": model}
