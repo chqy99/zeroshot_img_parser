@@ -127,3 +127,13 @@ class ModelLoader:
         ).to(device)
 
         return {"processor": processor, "model": model}
+
+    def _load_yolo(self, cfg, device):
+        model_path = cfg.get("checkpoint")
+        if model_path is None:
+            raise ValueError("YOLO模型加载需要 model 路径")
+
+        from ultralytics import YOLO
+
+        model = YOLO(model_path).to(device)
+        return model
