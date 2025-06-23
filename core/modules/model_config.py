@@ -6,7 +6,8 @@ from paddleocr import PaddleOCR
 from transformers import (
     AutoProcessor,
     AutoModelForZeroShotImageClassification,
-    AutoModelForCausalLM
+    AutoModelForVisualQuestionAnswering,
+    AutoModelForCausalLM,
 )
 
 from sam2.build_sam import build_sam2  # 你的sam2加载接口
@@ -31,13 +32,14 @@ class LazyModel:
     def __getitem__(self, item):
         return self._load_model()[item]
 
+
 class ModelLoader:
     def __init__(self, config_path=None, device: str = "cuda"):
         config_path = config_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../../configs/model_config.yaml"
+            "../../configs/model_config.yaml",
         )
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.models_cfg = yaml.safe_load(f)
 
         self.device = device
@@ -71,8 +73,8 @@ class ModelLoader:
             return lazy_model
 
     def _load_paddleocr(self, cfg, device):
-        device = 'gpu' if device == 'cuda' else device
-        model = PaddleOCR(paddlex_config=cfg.get("paddlex_config", None), device='gpu')
+        device = "gpu" if device == "cuda" else device
+        model = PaddleOCR(paddlex_config=cfg.get("paddlex_config", None), device="gpu")
         return model
 
     def _load_sam2(self, cfg, device):
@@ -91,8 +93,26 @@ class ModelLoader:
             raise ValueError("clip模型加载需要 processor 和 model 路径")
 
         processor = AutoProcessor.from_pretrained(processor_path)
-        model = AutoModelForZeroShotImageClassification.from_pretrained(model_path).to(device)
+        model = AutoModelForZeroShotImageClassification.from_pretrained(model_path).to(
+            device
+        )
         return {"processor": processor, "model": model, "label_texts": label_texts}
+
+    def _load_blip2(self, cfg, device):
+        processor_path = cfg.get("processor")
+        model_path = cfg.get("model")
+
+        if processor_path is None or model_path is None:
+            raise ValueError("BLIP2模型加载需要 processor 和 model 路径")
+
+        processor = AutoProcessor.from_pretrained(
+            processor_path, trust_remote_code=True
+        )
+        model = AutoModelForVisualQuestionAnswering.from_pretrained(model_path).to(
+            device
+        )
+
+        return {"processor": processor, "model": model}
 
     def _load_florence2(self, cfg, device):
         processor_path = cfg.get("processor")
@@ -101,7 +121,11 @@ class ModelLoader:
         if processor_path is None or model_path is None:
             raise ValueError("Florence2模型加载需要 processor 和 model 路径")
 
-        processor = AutoProcessor.from_pretrained(processor_path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
+        processor = AutoProcessor.from_pretrained(
+            processor_path, trust_remote_code=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, trust_remote_code=True, torch_dtype=torch.float16
+        ).to(device)
 
         return {"processor": processor, "model": model}

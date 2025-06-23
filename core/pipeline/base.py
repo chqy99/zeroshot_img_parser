@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 import numpy as np
 from imgdata.imgdata.structure import ImageObject
 
+
 class PipelineParser(ABC):
     def __init__(self):
         self.module_weights: Dict[str, float] = {}

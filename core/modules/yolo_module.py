@@ -4,6 +4,7 @@ from typing import List
 from imgdata.imgdata.structure import ImageObject
 from base import BaseModule
 
+
 class YoloModule(BaseModule):
     def __init__(self, model_path="yolov8n.pt"):
         self.model = YOLO(model_path)

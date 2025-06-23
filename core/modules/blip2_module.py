@@ -8,9 +8,9 @@ from base import EnricherModule
 from model_config import ModelLoader
 
 
-class Florence2Module(EnricherModule):
+class Blip2Module(EnricherModule):
     def __init__(self, model=None, processor=None, device="cuda"):
-        model_bundle = ModelLoader().get_model("florence2")
+        model_bundle = ModelLoader().get_model("blip2")
         self.model = model or model_bundle["model"]
         self.processor = processor or model_bundle["processor"]
         self.device = device
@@ -37,8 +37,10 @@ class Florence2Module(EnricherModule):
             image = obj.mask_image if obj.mask_image is not None else obj.image
             image = self.ensure_rgb_pil(image)
 
-            # Florence2 processor 返回 tokenized 图像
-            inputs = self.processor(images=image, return_tensors="pt").to(self.device)
+            # blip2 processor 返回 tokenized 图像
+            inputs = self.processor(
+                images=image, return_tensors="pt"
+            ).to(self.device)
 
             # 如果模型是 float16，输入也转半精度 float16
             if getattr(self.model, "dtype", torch.float32) == torch.float16:
@@ -61,9 +63,9 @@ class Florence2Module(EnricherModule):
 
 
 if __name__ == "__main__":
-    florence2Module = Florence2Module()
+    blip2Module = Blip2Module()
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = florence2Module.parse([ImageObject(image)])
+    result = blip2Module.parse([ImageObject(image)])
     print(result)

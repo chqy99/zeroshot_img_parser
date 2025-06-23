@@ -25,6 +25,10 @@ clip:
     - 'file'
     - 'date'
     - 'time'
+# blip2:
+#   preload: false
+#   processor: 'Salesforce/blip2-opt-2.7b'
+#   model: 'Salesforce/blip2-opt-2.7b'
 florence2:
   preload: false
   processor: 'microsoft/Florence-2-large'

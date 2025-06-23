@@ -6,6 +6,7 @@ from imgdata.imgdata.structure import ImageObject
 from base import EnricherModule
 from model_config import ModelLoader
 
+
 class ClipModule(EnricherModule):
     def __init__(self, model=None, processor=None, label_texts=None, device="cuda"):
         model_bundle = ModelLoader().get_model("clip")
@@ -23,7 +24,7 @@ class ClipModule(EnricherModule):
             label, score = self._classify(image)
             obj.label = label
             obj.score = score
-            obj.source_module = 'clip'
+            obj.source_module = "clip"
         return objects
 
     def _classify(self, image: np.ndarray):
@@ -46,9 +47,11 @@ class ClipModule(EnricherModule):
         text_features = self.model.get_text_features(**text_inputs)
         return text_features / text_features.norm(dim=-1, keepdim=True)
 
+
 if __name__ == "__main__":
     clipModule = ClipModule()
     from PIL import Image
-    image = np.array(Image.open('/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png'))
+
+    image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
     result = clipModule.parse([ImageObject(image)])
     print(result)

@@ -3,6 +3,7 @@ from typing import List
 from imgdata.imgdata.structure import ImageObject
 from base import BaseModule
 
+
 class GroundingDinoModule(BaseModule):
     def __init__(self, model, processor):
         self.model = model
