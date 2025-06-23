@@ -1,7 +1,9 @@
 # core/modules/florence2_module.py
 import torch
 import numpy as np
-from typing import List
+import cv2
+from torchvision.transforms import ToPILImage
+from typing import List, Optional
 from PIL import Image  # 缺少这一行
 from imgdata.imgdata.structure import ImageObject
 from base import EnricherModule
@@ -15,41 +17,26 @@ class Florence2Module(EnricherModule):
         self.processor = processor or model_bundle["processor"]
         self.device = device
 
-    def ensure_rgb_pil(self, image):
-        """确保输入为 RGB 格式的 PIL.Image"""
-        if isinstance(image, np.ndarray):
-            if image.ndim == 2:
-                image = np.stack([image] * 3, axis=-1)
-            elif image.shape[2] == 1:
-                image = np.concatenate([image] * 3, axis=-1)
-            elif image.shape[2] == 4:
-                image = image[:, :, :3]
-            image = Image.fromarray(image.astype(np.uint8))
-        elif isinstance(image, Image.Image):
-            image = image.convert("RGB")
-        else:
-            raise TypeError("Unsupported image format")
-        return image
-
     def parse(self, objects: List[ImageObject], **kwargs) -> List[ImageObject]:
+        to_pil = ToPILImage()
+        prompt = "<CAPTION>"
         for obj in objects:
             # 使用 mask_image 优先，否则用原图
             image = obj.mask_image if obj.mask_image is not None else obj.image
-            image = self.ensure_rgb_pil(image)
+            image = to_pil(image).convert("RGB")
 
-            # Florence2 processor 返回 tokenized 图像
-            inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-
-            # 如果模型是 float16，输入也转半精度 float16
-            if getattr(self.model, "dtype", torch.float32) == torch.float16:
-                inputs = {
-                    k: v.half() if v.dtype == torch.float32 else v
-                    for k, v in inputs.items()
-                }
+            # processor 返回 tokenized 图像
+            inputs = self.processor(images=image, text=prompt, return_tensors="pt").to(
+                self.device, dtype=torch.float16
+            )
 
             # 生成式图像理解
             with torch.no_grad():
-                output_ids = self.model.generate(**inputs, max_length=128)
+                output_ids = self.model.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_length=128,
+                )
 
             # 解码为文本
             text = self.processor.tokenizer.decode(
@@ -58,6 +45,40 @@ class Florence2Module(EnricherModule):
             obj.text = text
 
         return objects
+
+    # @torch.inference_mode()
+    # def parse(self, objects: List[ImageObject], starting_idx: int = 0) -> List[ImageObject]:
+    #     to_pil = ToPILImage()
+    #     prompt = "<CAPTION>"
+
+    #     for obj in objects[starting_idx:]:
+    #         image = obj.mask_image if obj.mask_image is not None else obj.image
+    #         image = cv2.resize(image, (64, 64))
+
+    #         pil_image = to_pil(image).convert("RGB")
+
+    #         inputs = self.processor(
+    #             images=pil_image,
+    #             text=prompt,
+    #             return_tensors="pt",
+    #             do_resize=False # You're already resizing with cv2.resize
+    #         ).to(device=self.device, dtype=torch.float16)
+
+    #         generated_ids = self.model.generate(
+    #             input_ids=inputs["input_ids"],
+    #             pixel_values=inputs["pixel_values"],
+    #             max_new_tokens=20,
+    #             num_beams=1,
+    #             do_sample=False
+    #         )
+
+    #         # Decode to text
+    #         text = self.processor.tokenizer.decode(
+    #             generated_ids[0], skip_special_tokens=True
+    #         )
+    #         obj.text = text
+
+    #     return objects
 
 
 if __name__ == "__main__":

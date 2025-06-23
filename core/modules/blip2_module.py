@@ -38,9 +38,7 @@ class Blip2Module(EnricherModule):
             image = self.ensure_rgb_pil(image)
 
             # blip2 processor 返回 tokenized 图像
-            inputs = self.processor(
-                images=image, return_tensors="pt"
-            ).to(self.device)
+            inputs = self.processor(images=image, return_tensors="pt").to(self.device)
 
             # 如果模型是 float16，输入也转半精度 float16
             if getattr(self.model, "dtype", torch.float32) == torch.float16:

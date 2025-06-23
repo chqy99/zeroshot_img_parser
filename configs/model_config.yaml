@@ -31,5 +31,10 @@ clip:
 #   model: 'Salesforce/blip2-opt-2.7b'
 florence2:
   preload: false
-  processor: 'microsoft/Florence-2-large'
-  model: 'microsoft/Florence-2-large'
+  # processor: 'microsoft/Florence-2-large'
+  # model: 'microsoft/Florence-2-large'
+  processor: 'microsoft/Florence-2-base'
+  model: 'checkpoints/icon_caption_florence'
+yolo:
+  preload: false
+  checkpoint: 'checkpoints/yolo/model.pt'

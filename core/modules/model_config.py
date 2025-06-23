@@ -105,9 +105,7 @@ class ModelLoader:
         if processor_path is None or model_path is None:
             raise ValueError("BLIP2模型加载需要 processor 和 model 路径")
 
-        processor = AutoProcessor.from_pretrained(
-            processor_path, trust_remote_code=True
-        )
+        processor = AutoProcessor.from_pretrained(processor_path)
         model = AutoModelForVisualQuestionAnswering.from_pretrained(model_path).to(
             device
         )
