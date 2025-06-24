@@ -17,9 +17,14 @@ class Florence2Module(EnricherModule):
         self.processor = processor or model_bundle["processor"]
         self.device = device
 
-    def parse(self, objects: List[ImageObject], **kwargs) -> List[ImageObject]:
+    # prompt: ['<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>',
+    #          '<OD>', '<DENSE_REGION_CAPTION>', '<REGION_PROPOSAL>', '<CAPTION_TO_PHRASE_GROUNDING>',
+    #          '<REFERRING_EXPRESSION_SEGMENTATION>', '<REGION_TO_SEGMENTATION>', '<OPEN_VOCABULARY_DETECTION>',
+    #          '<REGION_TO_CATEGORY>', '<REGION_TO_DESCRIPTION>', '<OCR>', '<OCR_WITH_REGION>']
+    # reference: https://github.com/anyantudre/Florence-2-Vision-Language-Model
+    def parse(self, objects: List[ImageObject], prompt: str = None, **kwargs) -> List[ImageObject]:
         to_pil = ToPILImage()
-        prompt = "<CAPTION>"
+        prompt = prompt or "<DETAILED_CAPTION>"
         for obj in objects:
             # 使用 mask_image 优先，否则用原图
             image = obj.mask_image if obj.mask_image is not None else obj.image
