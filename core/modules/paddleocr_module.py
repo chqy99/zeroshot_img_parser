@@ -21,7 +21,7 @@ class PaddleOCRModule(BaseModule):
         for i in range(len(box)):
             res.items.append(
                 ImageParseItem(
-                    image, "paddleocr", score[i], box[i], type='ocr', text=text[i]
+                    image, "paddleocr", score[i], box[i], type="ocr", text=text[i]
                 )
             )
         return res

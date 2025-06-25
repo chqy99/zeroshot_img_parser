@@ -29,7 +29,12 @@ class SamModule(BaseModule):
             score = item["stability_score"]
             parse_res.items.append(
                 ImageParseItem(
-                    image=image, source_module="sam2", score=score, bbox=bbox, mask=mask, type='instance'
+                    image=image,
+                    source_module="sam2",
+                    score=score,
+                    bbox=bbox,
+                    mask=mask,
+                    type="instance",
                 )
             )
         return parse_res
@@ -47,7 +52,7 @@ class SamModule(BaseModule):
         max_index = np.argmax(scores)
         bbox = BBox.mask_to_bbox(masks[max_index])
         return ImageParseItem(
-            image, "sam2", scores[max_index], bbox, masks[max_index], type='instance'
+            image, "sam2", scores[max_index], bbox, masks[max_index], type="instance"
         )
 
 

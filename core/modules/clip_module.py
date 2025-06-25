@@ -22,7 +22,7 @@ class ClipModule(EnricherModule):
         for obj in objects:
             image = obj.mask_image if obj.mask_image is not None else obj.image
             label, score = self._classify(image)
-            obj.enrich('clip', score, label = label)
+            obj.enrich("clip", score, label=label)
         return objects
 
     def _classify(self, image: np.ndarray):
@@ -51,5 +51,5 @@ if __name__ == "__main__":
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = clipModule.parse([ImageParseItem(image, '', 0, None)])
+    result = clipModule.parse([ImageParseItem(image, "", 0, None)])
     print(result)

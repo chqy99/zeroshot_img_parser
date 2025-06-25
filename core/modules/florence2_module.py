@@ -22,7 +22,12 @@ class Florence2Module(EnricherModule):
     #          '<REFERRING_EXPRESSION_SEGMENTATION>', '<REGION_TO_SEGMENTATION>', '<OPEN_VOCABULARY_DETECTION>',
     #          '<REGION_TO_CATEGORY>', '<REGION_TO_DESCRIPTION>', '<OCR>', '<OCR_WITH_REGION>']
     # reference: https://github.com/anyantudre/Florence-2-Vision-Language-Model
-    def parse(self, objects: List[ImageParseItem], prompt: str = "<DETAILED_CAPTION>", **kwargs) -> List[ImageParseItem]:
+    def parse(
+        self,
+        objects: List[ImageParseItem],
+        prompt: str = "<DETAILED_CAPTION>",
+        **kwargs
+    ) -> List[ImageParseItem]:
         to_pil = ToPILImage()
         prompt = prompt
         for obj in objects:
@@ -49,7 +54,7 @@ class Florence2Module(EnricherModule):
             text = self.processor.tokenizer.decode(
                 output_ids[0], skip_special_tokens=True
             )
-            obj.enrich('florence2', -1, text=text)
+            obj.enrich("florence2", -1, text=text)
 
         return objects
 
@@ -93,5 +98,5 @@ if __name__ == "__main__":
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = florence2Module.parse([ImageParseItem(image, '', 0, None)])
+    result = florence2Module.parse([ImageParseItem(image, "", 0, None)])
     print(result)

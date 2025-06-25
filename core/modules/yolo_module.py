@@ -33,7 +33,7 @@ class YoloModule(BaseModule):
 
             bbox = BBox(*xyxy)  # 假设 BBox 接受 4 个 float 值
             item = ImageParseItem(
-                image, 'yolo', score=conf, bbox=bbox, type='region', label=label
+                image, "yolo", score=conf, bbox=bbox, type="region", label=label
             )
             parse_items.append(item)
 
