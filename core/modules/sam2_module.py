@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from typing import List
-from imgdata.imgdata.structure import BBox, ImageObject, ImageParseResult
+from imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 from sam2.sam2_image_predictor import SAM2ImagePredictor
@@ -16,7 +16,7 @@ class SamModule(BaseModule):
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         res = self.mask_generator.generate(image)
-        parse_res = ImageParseResult(full_image=image)
+        parse_res = ImageParseResult(image=image)
         for item in res:
             mask = item["segmentation"]
             bbox_input = item["bbox"]
@@ -27,16 +27,16 @@ class SamModule(BaseModule):
                 bbox_input[1] + bbox_input[3],
             )
             score = item["stability_score"]
-            parse_res.objects.append(
-                ImageObject.from_mask(
-                    image, mask, bbox=bbox, score=score, source_module="sam2"
+            parse_res.items.append(
+                ImageParseItem(
+                    image=image, source_module="sam2", score=score, bbox=bbox, mask=mask, type='instance'
                 )
             )
         return parse_res
 
     def parse_with_prompts(
         self, image: np.ndarray, prompts=None, **kwargs
-    ) -> ImageObject:
+    ) -> ImageParseItem:
         self.predictor.set_image(image)
         with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
             if prompts is not None:
@@ -45,8 +45,9 @@ class SamModule(BaseModule):
                 masks, scores, _ = self.predictor.predict()
 
         max_index = np.argmax(scores)
-        return ImageObject.from_mask(
-            image, masks[max_index], score=scores[max_index], source_module="sam2"
+        bbox = BBox.mask_to_bbox(masks[max_index])
+        return ImageParseItem(
+            image, "sam2", scores[max_index], bbox, masks[max_index], type='instance'
         )
 
 

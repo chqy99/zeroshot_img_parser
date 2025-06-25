@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from imgdata.imgdata.structure import ImageObject, ImageParseResult
+from imgdata.imgdata.image_parse import ImageParseItem, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 
@@ -12,16 +12,16 @@ class PaddleOCRModule(BaseModule):
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         result = self.reader.predict(image)
-        res = ImageParseResult(full_image=image)
+        res = ImageParseResult(image)
         box, text, score = (
             result[0]["rec_polys"],
             result[0]["rec_texts"],
             result[0]["rec_scores"],
         )
         for i in range(len(box)):
-            res.objects.append(
-                ImageObject.from_ocr(
-                    image, box[i], text[i], score[i], source_module="paddleocr"
+            res.items.append(
+                ImageParseItem(
+                    image, "paddleocr", score[i], box[i], type='ocr', text=text[i]
                 )
             )
         return res

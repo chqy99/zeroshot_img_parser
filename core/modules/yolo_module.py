@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import numpy as np
 from typing import List
-from imgdata.imgdata.structure import ImageObject, ImageParseResult
+from imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 from PIL import Image
@@ -18,21 +18,26 @@ class YoloModule(BaseModule):
         elif image.ndim == 2:  # 灰度图 -> RGB
             image = np.stack([image] * 3, axis=-1)
 
-        result = self.model.predict(image)[0]
+        result = self.model.predict(image, verbose=False)[0]
 
         boxes = result.boxes
         names = result.names  # {0: 'icon'}
 
-        outputs = []
+        parse_items: List[ImageParseItem] = []
+
         for i in range(len(boxes)):
-            xyxy = boxes.xyxy[i].cpu().numpy()
+            xyxy = boxes.xyxy[i].cpu().numpy().tolist()  # [x1, y1, x2, y2]
             conf = float(boxes.conf[i].item())
             cls_id = int(boxes.cls[i].item())
             label = names.get(cls_id, str(cls_id))  # 类别名字符串
 
-            outputs.append((xyxy, conf, label))
+            bbox = BBox(*xyxy)  # 假设 BBox 接受 4 个 float 值
+            item = ImageParseItem(
+                image, 'yolo', score=conf, bbox=bbox, type='region', label=label
+            )
+            parse_items.append(item)
 
-        return outputs
+        return ImageParseResult(image=image, items=parse_items)
 
 
 if __name__ == "__main__":

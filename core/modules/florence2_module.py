@@ -5,7 +5,7 @@ import cv2
 from torchvision.transforms import ToPILImage
 from typing import List, Optional
 from PIL import Image  # 缺少这一行
-from imgdata.imgdata.structure import ImageObject
+from imgdata.imgdata.image_parse import ImageParseItem
 from base import EnricherModule
 from model_config import ModelLoader
 
@@ -22,9 +22,9 @@ class Florence2Module(EnricherModule):
     #          '<REFERRING_EXPRESSION_SEGMENTATION>', '<REGION_TO_SEGMENTATION>', '<OPEN_VOCABULARY_DETECTION>',
     #          '<REGION_TO_CATEGORY>', '<REGION_TO_DESCRIPTION>', '<OCR>', '<OCR_WITH_REGION>']
     # reference: https://github.com/anyantudre/Florence-2-Vision-Language-Model
-    def parse(self, objects: List[ImageObject], prompt: str = None, **kwargs) -> List[ImageObject]:
+    def parse(self, objects: List[ImageParseItem], prompt: str = "<DETAILED_CAPTION>", **kwargs) -> List[ImageParseItem]:
         to_pil = ToPILImage()
-        prompt = prompt or "<DETAILED_CAPTION>"
+        prompt = prompt
         for obj in objects:
             # 使用 mask_image 优先，否则用原图
             image = obj.mask_image if obj.mask_image is not None else obj.image
@@ -49,7 +49,7 @@ class Florence2Module(EnricherModule):
             text = self.processor.tokenizer.decode(
                 output_ids[0], skip_special_tokens=True
             )
-            obj.text = text
+            obj.enrich('florence2', -1, text=text)
 
         return objects
 
@@ -93,5 +93,5 @@ if __name__ == "__main__":
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = florence2Module.parse([ImageObject(image)])
+    result = florence2Module.parse([ImageParseItem(image, '', 0, None)])
     print(result)

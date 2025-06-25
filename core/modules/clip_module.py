@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from typing import List
 from PIL import Image
-from imgdata.imgdata.structure import ImageObject
+from imgdata.imgdata.image_parse import ImageParseItem
 from base import EnricherModule
 from model_config import ModelLoader
 
@@ -18,13 +18,11 @@ class ClipModule(EnricherModule):
         with torch.no_grad():
             self.label_features = self._encode_texts(self.label_texts)
 
-    def parse(self, objects: List[ImageObject], **kwargs) -> List[ImageObject]:
+    def parse(self, objects: List[ImageParseItem], **kwargs) -> List[ImageParseItem]:
         for obj in objects:
             image = obj.mask_image if obj.mask_image is not None else obj.image
             label, score = self._classify(image)
-            obj.label = label
-            obj.score = score
-            obj.source_module = "clip"
+            obj.enrich('clip', score, label = label)
         return objects
 
     def _classify(self, image: np.ndarray):
@@ -53,5 +51,5 @@ if __name__ == "__main__":
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = clipModule.parse([ImageObject(image)])
+    result = clipModule.parse([ImageParseItem(image, '', 0, None)])
     print(result)
