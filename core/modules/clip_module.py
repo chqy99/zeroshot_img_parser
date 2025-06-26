@@ -3,8 +3,8 @@ import numpy as np
 from typing import List
 from PIL import Image
 from core.imgdata.imgdata.image_parse import ImageParseItem
-from base import EnricherModule
-from model_config import ModelLoader
+from core.modules.base import EnricherModule
+from core.modules.model_config import ModelLoader
 
 
 class ClipModule(EnricherModule):
@@ -18,9 +18,23 @@ class ClipModule(EnricherModule):
         with torch.no_grad():
             self.label_features = self._encode_texts(self.label_texts)
 
-    def parse(self, objects: List[ImageParseItem], **kwargs) -> List[ImageParseItem]:
+    def parse(
+        self,
+        objects: List[ImageParseItem],
+        filter: str = "bbox",  # 可选：bbox / mask / image
+        **kwargs
+    ) -> List[ImageParseItem]:
         for obj in objects:
-            image = obj.mask_image if obj.mask_image is not None else obj.image
+            # --- 选择区域图像 ---
+            if filter == "mask":
+                image = obj.get_mask_image()
+                if image is None:
+                    image = obj.image
+            elif filter == "image":
+                image = obj.image
+            else:  # 默认 bbox
+                image = obj.bbox_image if obj.bbox_image is not None else obj.get_bbox_image()
+
             label, score = self._classify(image)
             obj.enrich("clip", score, label=label)
         return objects

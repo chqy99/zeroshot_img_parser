@@ -13,6 +13,7 @@ from transformers import (
 
 from sam2.build_sam import build_sam2
 
+
 class LazyModel:
     def __init__(self, loader_func):
         self._loader_func = loader_func
@@ -117,16 +118,25 @@ class ModelLoader:
     # ✅ 以下是模型加载函数（和之前一致）
     def _load_yolo(self, cfg, device):
         from ultralytics import YOLO
+
         ckpt = cfg.get("checkpoint")
         return YOLO(ckpt).to(device)
 
     def _load_clip(self, cfg, device):
         processor = AutoProcessor.from_pretrained(cfg["processor"])
-        model = AutoModelForZeroShotImageClassification.from_pretrained(cfg["model"]).to(device)
-        return {"processor": processor, "model": model, "label_texts": cfg.get("label_texts", [])}
+        model = AutoModelForZeroShotImageClassification.from_pretrained(
+            cfg["model"]
+        ).to(device)
+        return {
+            "processor": processor,
+            "model": model,
+            "label_texts": cfg.get("label_texts", []),
+        }
 
     def _load_florence2(self, cfg, device):
-        processor = AutoProcessor.from_pretrained(cfg["processor"], trust_remote_code=True)
+        processor = AutoProcessor.from_pretrained(
+            cfg["processor"], trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             cfg["model"], trust_remote_code=True, torch_dtype=torch.float16
         ).to(device)

@@ -1,31 +1,32 @@
 # core/pipeline/base.py
+
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import Dict, Callable, Any
 import numpy as np
 from core.imgdata.imgdata.image_parse import ImageParseResult
-from core.modules.model_config import ModelLoader
 
 
 class PipelineParser(ABC):
-    def __init__(self, modules: List[str] = []):
-        self.model_loader = ModelLoader()
-        self.module_names = modules
-        self.modules: Dict[str, Any] = {}  # 惰性加载后存放模块实例
-
-        self.register_module()
+    def __init__(self, module_factories: Dict[str, Callable[[], Any]]):
+        """
+        :param module_factories: 模块名 → 构造函数（工厂），每个返回一个 module 实例
+        """
+        self.module_factories = module_factories
+        self.modules: Dict[str, Any] = {}
 
     def register_module(self):
-        """
-        根据 module_names 注册模块（惰性加载，不立即初始化模型权重）
-        """
-        for name in self.module_names:
-            if name not in self.modules:
-                self.modules[name] = self.model_loader.get_model(name)
+        """注册所有工厂中定义的模块（懒加载触发）"""
+        for name in self.module_factories:
+            self.get_module(name)
+
+    def get_module(self, name: str):
+        """获取模块实例，必要时调用其构造工厂"""
+        if name not in self.modules:
+            if name not in self.module_factories:
+                raise ValueError(f"模块构造器未定义: {name}")
+            self.modules[name] = self.module_factories[name]()
+        return self.modules[name]
 
     @abstractmethod
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
-        """
-        子类必须实现的解析方法：组合多个模块进行图像解析
-        """
         pass
-

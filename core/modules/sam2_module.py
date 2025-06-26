@@ -1,11 +1,12 @@
+from sam2.sam2_image_predictor import SAM2ImagePredictor
+from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 import torch
 import numpy as np
 from typing import List
+
 from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
-from base import BaseModule
-from model_config import ModelLoader
-from sam2.sam2_image_predictor import SAM2ImagePredictor
-from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+from core.modules.base import BaseModule
+from core.modules.model_config import ModelLoader
 
 
 class SamModule(BaseModule):

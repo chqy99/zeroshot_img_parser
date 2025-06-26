@@ -1,13 +1,13 @@
 # core/modules/florence2_module.py
+from torchvision.transforms import ToPILImage
 import torch
 import numpy as np
 import cv2
-from torchvision.transforms import ToPILImage
 from typing import List, Optional
 from PIL import Image  # 缺少这一行
 from core.imgdata.imgdata.image_parse import ImageParseItem
-from base import EnricherModule
-from model_config import ModelLoader
+from core.modules.base import EnricherModule
+from core.modules.model_config import ModelLoader
 
 
 class Florence2Module(EnricherModule):
@@ -26,13 +26,22 @@ class Florence2Module(EnricherModule):
         self,
         objects: List[ImageParseItem],
         prompt: str = "<DETAILED_CAPTION>",
+        filter: str = "bbox",  # 可选：bbox / mask / image
         **kwargs
     ) -> List[ImageParseItem]:
         to_pil = ToPILImage()
         prompt = prompt
         for obj in objects:
-            # 使用 mask_image 优先，否则用原图
-            image = obj.mask_image if obj.mask_image is not None else obj.image
+            # --- 选择区域图像 ---
+            if filter == "mask":
+                image = obj.get_mask_image()
+                if image is None:
+                    image = obj.image
+            elif filter == "image":
+                image = obj.image
+            else:  # 默认 bbox
+                image = obj.bbox_image if obj.bbox_image is not None else obj.get_bbox_image()
+
             image = to_pil(image).convert("RGB")
 
             # processor 返回 tokenized 图像
@@ -45,7 +54,7 @@ class Florence2Module(EnricherModule):
                 output_ids = self.model.generate(
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
-                    temperature=0.7
+                    temperature=0.7,
                 )
 
             # 解码为文本
