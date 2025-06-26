@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from core.imgdata.imgdata.image_parse import ImageParseItem, ImageParseResult
+from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -26,9 +26,19 @@ class PaddleOCRModule(BaseModule):
             result[0]["rec_scores"],
         )
         for i in range(len(box)):
+            poly = box[i]
+            x_coords = poly[:, 0]
+            y_coords = poly[:, 1]
+            bbox = BBox(
+                x1=float(min(x_coords)),
+                y1=float(min(y_coords)),
+                x2=float(max(x_coords)),
+                y2=float(max(y_coords)),
+            )
+
             res.items.append(
                 ImageParseItem(
-                    image, "paddleocr", score[i], box[i], type="ocr", text=text[i]
+                    image, "paddleocr", score[i], bbox, type="ocr", text=text[i]
                 )
             )
         return res

@@ -15,7 +15,6 @@ class CustomOmniParser(PipelineParser):
         super().__init__(module_names=["yolo", "paddleocr", "florence2_icon"])
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
-        self.register_modules()
         result = ImageParseResult(image=image)
 
         # 1. 使用 YOLO 检测区域元素
