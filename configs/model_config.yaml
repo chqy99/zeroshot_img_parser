@@ -1,0 +1,38 @@
+paddleocr:
+  preload: true
+  paddlex_config: 'configs/paddleocr_config.yaml'
+sam2:
+  preload: true
+  model_cfg: 'configs/sam2.1/sam2.1_hiera_l.yaml'
+  checkpoint: 'checkpoints/sam2.1/sam2.1_hiera_large.pt'
+clip:
+  preload: false
+  processor: 'openai/clip-vit-base-patch32'
+  model: 'openai/clip-vit-base-patch32'
+  label_texts:
+    - 'button'
+    - 'unknown'
+    - 'text'
+    - 'image'
+    - 'checkbox'
+    - 'radio'
+    - 'select'
+    - 'input'
+    - 'dropdown'
+    - 'link'
+    - 'table'
+    - 'signature'
+    - 'file'
+    - 'date'
+    - 'time'
+florence2:
+  preload: false
+  processor: 'microsoft/Florence-2-large'
+  model: 'microsoft/Florence-2-large'
+florence2_icon:
+  preload: false
+  processor: 'microsoft/Florence-2-base'
+  model: 'checkpoints/icon_caption_florence'
+yolo:
+  preload: false
+  checkpoint: 'checkpoints/yolo/model.pt'
