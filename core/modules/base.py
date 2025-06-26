@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np
-from imgdata.imgdata.image_parse import ImageParseResult
+from core.imgdata.imgdata.image_parse import ImageParseResult
 
 
 class BaseModule(ABC):

@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from imgdata.imgdata.image_parse import ImageParseItem, ImageParseResult
+from core.imgdata.imgdata.image_parse import ImageParseItem, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 

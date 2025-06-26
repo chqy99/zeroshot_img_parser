@@ -30,6 +30,7 @@ florence2:
   processor: 'microsoft/Florence-2-large'
   model: 'microsoft/Florence-2-large'
 florence2_icon:
+  preload: false
   processor: 'microsoft/Florence-2-base'
   model: 'checkpoints/icon_caption_florence'
 yolo:

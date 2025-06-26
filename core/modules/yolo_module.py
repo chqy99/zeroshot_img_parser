@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import numpy as np
 from typing import List
-from imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from base import BaseModule
 from model_config import ModelLoader
 from PIL import Image

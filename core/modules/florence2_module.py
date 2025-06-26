@@ -5,7 +5,7 @@ import cv2
 from torchvision.transforms import ToPILImage
 from typing import List, Optional
 from PIL import Image  # 缺少这一行
-from imgdata.imgdata.image_parse import ImageParseItem
+from core.imgdata.imgdata.image_parse import ImageParseItem
 from base import EnricherModule
 from model_config import ModelLoader
 

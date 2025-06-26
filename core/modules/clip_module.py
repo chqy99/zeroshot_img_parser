@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from typing import List
 from PIL import Image
-from imgdata.imgdata.image_parse import ImageParseItem
+from core.imgdata.imgdata.image_parse import ImageParseItem
 from base import EnricherModule
 from model_config import ModelLoader
 
