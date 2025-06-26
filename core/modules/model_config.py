@@ -1,17 +1,6 @@
 import os
-import torch
 import yaml
 import asyncio
-
-from paddleocr import PaddleOCR
-from transformers import (
-    AutoProcessor,
-    AutoModelForZeroShotImageClassification,
-    AutoModelForVisualQuestionAnswering,
-    AutoModelForCausalLM,
-)
-
-from sam2.build_sam import build_sam2
 
 
 class LazyModel:
@@ -58,6 +47,16 @@ class AsyncLazyModel:
 
 
 class ModelLoader:
+    _loaders = {}
+
+    @classmethod
+    def register_loader(cls, name):
+        """注册模型加载函数的装饰器"""
+        def wrapper(fn):
+            cls._loaders[name] = fn
+            return fn
+        return wrapper
+
     def __init__(self, config_path=None, device="cuda"):
         config_path = config_path or os.path.join(
             os.path.dirname(__file__), "../../configs/model_config.yaml"
@@ -71,11 +70,9 @@ class ModelLoader:
     def _get_loader_func(self, name):
         if name not in self.models_cfg:
             raise ValueError(f"模型 '{name}' 未在配置中定义")
-        cfg = self.models_cfg[name]
-        loader_fn = getattr(self, f"_load_{name}", None)
-        if loader_fn is None:
-            raise ValueError(f"模型 '{name}' 未定义加载方法")
-        return lambda: loader_fn(cfg, self.device)
+        if name not in self._loaders:
+            raise ValueError(f"模型 '{name}' 未注册加载函数")
+        return lambda: self._loaders[name](self.models_cfg[name], self.device)
 
     def get_model(self, name):
         if name in self.models:
@@ -114,39 +111,3 @@ class ModelLoader:
             self.models[name] = model
 
         return model
-
-    # ✅ 以下是模型加载函数（和之前一致）
-    def _load_yolo(self, cfg, device):
-        from ultralytics import YOLO
-
-        ckpt = cfg.get("checkpoint")
-        return YOLO(ckpt).to(device)
-
-    def _load_clip(self, cfg, device):
-        processor = AutoProcessor.from_pretrained(cfg["processor"])
-        model = AutoModelForZeroShotImageClassification.from_pretrained(
-            cfg["model"]
-        ).to(device)
-        return {
-            "processor": processor,
-            "model": model,
-            "label_texts": cfg.get("label_texts", []),
-        }
-
-    def _load_florence2(self, cfg, device):
-        processor = AutoProcessor.from_pretrained(
-            cfg["processor"], trust_remote_code=True
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            cfg["model"], trust_remote_code=True, torch_dtype=torch.float16
-        ).to(device)
-        return {"processor": processor, "model": model}
-
-    def _load_florence2_icon(self, cfg, device):
-        return self._load_florence2(cfg, device)
-
-    def _load_paddleocr(self, cfg, device):
-        return PaddleOCR(device="gpu" if device == "cuda" else device)
-
-    def _load_sam2(self, cfg, device):
-        return build_sam2(cfg["model_cfg"], cfg["checkpoint"]).to(device)

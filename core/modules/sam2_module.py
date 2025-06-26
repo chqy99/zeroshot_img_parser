@@ -1,3 +1,4 @@
+from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 import torch
@@ -7,11 +8,15 @@ from typing import List
 from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
+from core.modules.module_factory import ModuleFactory
 
+@ModelLoader.register_loader("sam2")
+def load_model_sam2(cfg, device):
+    return build_sam2(cfg["model_cfg"], cfg["checkpoint"]).to(device)
 
 class SamModule(BaseModule):
-    def __init__(self, sam_model=None):
-        self.model = sam_model or ModelLoader().get_model("sam2")
+    def __init__(self, sam_model):
+        self.model = sam_model
         self.mask_generator = SAM2AutomaticMaskGenerator(self.model)
         self.predictor = SAM2ImagePredictor(self.model)
 
@@ -56,10 +61,13 @@ class SamModule(BaseModule):
             image, "sam2", scores[max_index], bbox, masks[max_index], type="instance"
         )
 
+@ModuleFactory.register_module("sam2")
+def build_module_sam2():
+    model = ModelLoader().get_model("sam2")
+    return SamModule(model)
 
 if __name__ == "__main__":
-    sam_module = SamModule()
-
+    sam_module = ModuleFactory.get_module("sam2")
     from PIL import Image
 
     image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))

@@ -5,7 +5,6 @@ from typing import List
 from core.pipeline.base import PipelineParser
 from core.imgdata.imgdata.image_parse import ImageParseResult, ImageParseItem
 
-from core.modules.model_config import ModelLoader
 from core.modules.yolo_module import YoloModule
 from core.modules.paddleocr_module import PaddleOCRModule
 from core.modules.florence2_module import Florence2Module
@@ -13,21 +12,10 @@ from core.modules.florence2_module import Florence2Module
 
 class CustomOmniParser(PipelineParser):
     def __init__(self):
-        model_loader = ModelLoader()
-        cfg = model_loader.get_model("florence2_icon")
-
-        super().__init__(
-            module_factories={
-                "yolo": lambda: YoloModule(model_loader.get_model("yolo")),
-                "paddleocr": lambda: PaddleOCRModule(
-                    model_loader.get_model("paddleocr")
-                ),
-                "florence2": lambda: Florence2Module(cfg["model"], cfg["processor"]),
-            }
-        )
+        super().__init__(module_names=["yolo", "paddleocr", "florence2_icon"])
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
-        self.register_module()
+        self.register_modules()
         result = ImageParseResult(image=image)
 
         # 1. 使用 YOLO 检测区域元素
@@ -45,8 +33,8 @@ class CustomOmniParser(PipelineParser):
                 ocr_item.metadata["region_bbox"] = item.bbox.to_dict()
                 result.items.append(ocr_item)
 
-        # 3. 使用 Florence2 进行语义解释（逐个区域）
-        flor: Florence2Module = self.get_module("florence2")
+        # 3. 使用 Florence2_icon 进行语义解释（逐个区域）
+        flor: Florence2Module = self.get_module("florence2_icon")
         flor_items: List[ImageParseItem] = flor.parse(
             det_result.items, prompt="<CAPTION>", **kwargs
         )

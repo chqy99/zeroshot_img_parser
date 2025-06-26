@@ -1,30 +1,29 @@
 # core/pipeline/base.py
 
 from abc import ABC, abstractmethod
-from typing import Dict, Callable, Any
+from typing import Dict, List, Any
 import numpy as np
 from core.imgdata.imgdata.image_parse import ImageParseResult
+from core.modules.module_factory import ModuleFactory
 
 
 class PipelineParser(ABC):
-    def __init__(self, module_factories: Dict[str, Callable[[], Any]]):
+    def __init__(self, module_names: List[str]):
         """
-        :param module_factories: 模块名 → 构造函数（工厂），每个返回一个 module 实例
+        :param module_names: 模块名列表（已注册到 ModuleFactory 中）
         """
-        self.module_factories = module_factories
+        self.module_names = module_names
         self.modules: Dict[str, Any] = {}
 
-    def register_module(self):
-        """注册所有工厂中定义的模块（懒加载触发）"""
-        for name in self.module_factories:
+    def register_modules(self):
+        """预加载所有模块（会触发 ModuleFactory 构造）"""
+        for name in self.module_names:
             self.get_module(name)
 
     def get_module(self, name: str):
-        """获取模块实例，必要时调用其构造工厂"""
+        """获取模块实例，必要时从 ModuleFactory 构造"""
         if name not in self.modules:
-            if name not in self.module_factories:
-                raise ValueError(f"模块构造器未定义: {name}")
-            self.modules[name] = self.module_factories[name]()
+            self.modules[name] = ModuleFactory.get_module(name)
         return self.modules[name]
 
     @abstractmethod

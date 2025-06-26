@@ -6,11 +6,17 @@ from PIL import Image
 from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
+from core.modules.module_factory import ModuleFactory
 
+@ModelLoader.register_loader("yolo")
+def load_model_yolo(cfg, device):
+    ckpt = cfg.get("checkpoint")
+    model = YOLO(ckpt).to(device)
+    return model
 
 class YoloModule(BaseModule):
-    def __init__(self, model=None):
-        self.model = model or ModelLoader().get_model("yolo")
+    def __init__(self, model):
+        self.model = model
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         # 确保输入是 RGB 3 通道
@@ -40,9 +46,13 @@ class YoloModule(BaseModule):
 
         return ImageParseResult(image=image, items=parse_items)
 
+@ModuleFactory.register_module("yolo")
+def build_module_yolo():
+    model = ModelLoader().get_model("yolo")
+    return YoloModule(model)
 
 if __name__ == "__main__":
-    yoloModule = YoloModule()
+    yoloModule = ModuleFactory.get_module("yolo")
 
     # 加载图像并转换为 RGB 格式，再转 numpy
     image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")

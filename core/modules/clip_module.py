@@ -1,18 +1,28 @@
 import torch
+from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 import numpy as np
 from typing import List
 from PIL import Image
 from core.imgdata.imgdata.image_parse import ImageParseItem
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
+from core.modules.module_factory import ModuleFactory
 
+@ModelLoader.register_loader("clip")
+def load_model_clip(cfg, device):
+    processor = AutoProcessor.from_pretrained(cfg["processor"])
+    model = AutoModelForZeroShotImageClassification.from_pretrained(cfg["model"]).to(device)
+    return {
+        "processor": processor,
+        "model": model,
+        "label_texts": cfg.get("label_texts", []),
+    }
 
 class ClipModule(EnricherModule):
     def __init__(self, model=None, processor=None, label_texts=None, device="cuda"):
-        model_bundle = ModelLoader().get_model("clip")
-        self.model = model or model_bundle["model"]
-        self.processor = processor or model_bundle["processor"]
-        self.label_texts = label_texts or model_bundle["label_texts"]
+        self.model = model
+        self.processor = processor
+        self.label_texts = label_texts
         self.device = device
 
         with torch.no_grad():
@@ -59,11 +69,19 @@ class ClipModule(EnricherModule):
         text_features = self.model.get_text_features(**text_inputs)
         return text_features / text_features.norm(dim=-1, keepdim=True)
 
+@ModuleFactory.register_module("clip")
+def build_module_clip():
+    model_bundle = ModelLoader().get_model("clip")
+    return ClipModule(
+        model=model_bundle["model"],
+        processor=model_bundle["processor"],
+        label_texts=model_bundle["label_texts"]
+    )
 
 if __name__ == "__main__":
-    clipModule = ClipModule()
+    clipModule: ClipModule = ModuleFactory.get_module("clip")
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = clipModule.parse([ImageParseItem(image, "", 0, None)])
+    result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)

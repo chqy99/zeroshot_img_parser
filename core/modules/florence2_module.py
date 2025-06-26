@@ -1,4 +1,5 @@
 # core/modules/florence2_module.py
+from transformers import AutoProcessor, AutoModelForCausalLM
 from torchvision.transforms import ToPILImage
 import torch
 import numpy as np
@@ -8,13 +9,27 @@ from PIL import Image  # 缺少这一行
 from core.imgdata.imgdata.image_parse import ImageParseItem
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
+from core.modules.module_factory import ModuleFactory
 
+@ModelLoader.register_loader("florence2")
+def load_model_florence2(cfg, device):
+    processor = AutoProcessor.from_pretrained(cfg["processor"], trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        cfg["model"], trust_remote_code=True, torch_dtype="float16"
+    ).to(device)
+    return {
+        "processor": processor,
+        "model": model,
+    }
+
+@ModelLoader.register_loader("florence2_icon")
+def load_model_florence2_icon(cfg, device):
+    return load_model_florence2(cfg, device)
 
 class Florence2Module(EnricherModule):
-    def __init__(self, model=None, processor=None, device="cuda"):
-        model_bundle = ModelLoader().get_model("florence2")
-        self.model = model or model_bundle["model"]
-        self.processor = processor or model_bundle["processor"]
+    def __init__(self, model, processor, device="cuda"):
+        self.model = model
+        self.processor = processor
         self.device = device
 
     # prompt: ['<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>',
@@ -65,12 +80,20 @@ class Florence2Module(EnricherModule):
 
         return objects
 
+@ModuleFactory.register_module("florence2")
+def build_module_florence2():
+    cfg = ModelLoader().get_model("florence2")
+    return Florence2Module(cfg["model"], cfg["processor"])
+
+@ModuleFactory.register_module("florence2_icon")
+def build_module_florence2_icon():
+    cfg = ModelLoader().get_model("florence2_icon")
+    return Florence2Module(cfg["model"], cfg["processor"])
 
 if __name__ == "__main__":
-    cfg = ModelLoader().get_model("florence2_icon")
-    florence2Module = Florence2Module(cfg["model"], cfg["processor"])
+    florence2Module = ModuleFactory.get_module("florence2_icon")
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = florence2Module.parse([ImageParseItem(image, "", 0, None)])
+    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
