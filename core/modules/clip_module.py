@@ -19,7 +19,7 @@ def load_model_clip(cfg, device):
     }
 
 class ClipModule(EnricherModule):
-    def __init__(self, model=None, processor=None, label_texts=None, device="cuda"):
+    def __init__(self, model, processor, label_texts, device="cuda"):
         self.model = model
         self.processor = processor
         self.label_texts = label_texts

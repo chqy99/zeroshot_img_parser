@@ -15,8 +15,8 @@ def load_model_sam2(cfg, device):
     return build_sam2(cfg["model_cfg"], cfg["checkpoint"]).to(device)
 
 class SamModule(BaseModule):
-    def __init__(self, sam_model):
-        self.model = sam_model
+    def __init__(self, model):
+        self.model = model
         self.mask_generator = SAM2AutomaticMaskGenerator(self.model)
         self.predictor = SAM2ImagePredictor(self.model)
 
