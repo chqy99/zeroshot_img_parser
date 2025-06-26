@@ -128,6 +128,9 @@ class ModelLoader:
 
         return {"processor": processor, "model": model}
 
+    def _load_florence2_icon(self, cfg, device):
+        return self._load_florence2(cfg, device)
+
     def _load_yolo(self, cfg, device):
         model_path = cfg.get("checkpoint")
         if model_path is None:

@@ -45,9 +45,7 @@ class Florence2Module(EnricherModule):
                 output_ids = self.model.generate(
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
-                    temperature=0.7,
-                    min_length=16,
-                    max_length=128,
+                    temperature=0.7
                 )
 
             # 解码为文本
@@ -58,43 +56,10 @@ class Florence2Module(EnricherModule):
 
         return objects
 
-    # @torch.inference_mode()
-    # def parse(self, objects: List[ImageObject], starting_idx: int = 0) -> List[ImageObject]:
-    #     to_pil = ToPILImage()
-    #     prompt = "<CAPTION>"
-
-    #     for obj in objects[starting_idx:]:
-    #         image = obj.mask_image if obj.mask_image is not None else obj.image
-    #         image = cv2.resize(image, (64, 64))
-
-    #         pil_image = to_pil(image).convert("RGB")
-
-    #         inputs = self.processor(
-    #             images=pil_image,
-    #             text=prompt,
-    #             return_tensors="pt",
-    #             do_resize=False # You're already resizing with cv2.resize
-    #         ).to(device=self.device, dtype=torch.float16)
-
-    #         generated_ids = self.model.generate(
-    #             input_ids=inputs["input_ids"],
-    #             pixel_values=inputs["pixel_values"],
-    #             max_new_tokens=20,
-    #             num_beams=1,
-    #             do_sample=False
-    #         )
-
-    #         # Decode to text
-    #         text = self.processor.tokenizer.decode(
-    #             generated_ids[0], skip_special_tokens=True
-    #         )
-    #         obj.text = text
-
-    #     return objects
-
 
 if __name__ == "__main__":
-    florence2Module = Florence2Module()
+    cfg = ModelLoader().get_model("florence2_icon")
+    florence2Module = Florence2Module(cfg["model"], cfg["processor"])
     from PIL import Image
 
     image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
