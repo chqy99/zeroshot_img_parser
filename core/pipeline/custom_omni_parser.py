@@ -3,7 +3,7 @@
 import numpy as np
 from typing import List
 from core.pipeline.base import PipelineParser
-from core.imgdata.imgdata.image_parse import ImageParseResult, ImageParseItem
+from core.imgdata.image_data import ImageParseResult, ImageParseItem
 
 from core.modules.yolo_module import YoloModule
 from core.modules.paddleocr_module import PaddleOCRModule
@@ -40,16 +40,3 @@ class CustomOmniParser(PipelineParser):
         result.items.extend(flor_items)
 
         return result
-
-
-if __name__ == "__main__":
-    omni_parser = CustomOmniParser()
-
-    # 加载图像并转换为 RGB 格式，再转 numpy
-    from PIL import Image
-
-    image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    image_np = np.array(image)
-
-    result = omni_parser.parse(image_np)
-    print(result)

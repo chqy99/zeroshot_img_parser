@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -47,11 +47,3 @@ class PaddleOCRModule(BaseModule):
 def build_module_paddleocr():
     model = ModelLoader().get_model("paddleocr")
     return PaddleOCRModule(model)
-
-if __name__ == "__main__":
-    paddleocr_module = ModuleFactory.get_module("paddleocr")
-    from PIL import Image
-
-    image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))
-    result: ImageParseResult = paddleocr_module.parse(image)
-    print(result)

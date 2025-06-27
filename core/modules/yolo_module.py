@@ -1,9 +1,8 @@
 from ultralytics import YOLO
 import numpy as np
 from typing import List
-from PIL import Image
 
-from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -50,13 +49,3 @@ class YoloModule(BaseModule):
 def build_module_yolo():
     model = ModelLoader().get_model("yolo")
     return YoloModule(model)
-
-if __name__ == "__main__":
-    yoloModule = ModuleFactory.get_module("yolo")
-
-    # 加载图像并转换为 RGB 格式，再转 numpy
-    image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    image_np = np.array(image)
-
-    result = yoloModule.parse(image_np)
-    print(result)

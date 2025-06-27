@@ -3,7 +3,7 @@ from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 import numpy as np
 from typing import List
 from PIL import Image
-from core.imgdata.imgdata.image_parse import ImageParseItem
+from core.imgdata.image_data import ImageParseItem
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -78,10 +78,3 @@ def build_module_clip():
         label_texts=model_bundle["label_texts"]
     )
 
-if __name__ == "__main__":
-    clipModule: ClipModule = ModuleFactory.get_module("clip")
-    from PIL import Image
-
-    image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
-    print(result)

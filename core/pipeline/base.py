@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any
 import numpy as np
-from core.imgdata.imgdata.image_parse import ImageParseResult
+from core.imgdata.image_data import ImageParseResult
 from core.modules.module_factory import ModuleFactory
 
 

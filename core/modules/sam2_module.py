@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from typing import List
 
-from core.imgdata.imgdata.image_parse import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -65,11 +65,3 @@ class SamModule(BaseModule):
 def build_module_sam2():
     model = ModelLoader().get_model("sam2")
     return SamModule(model)
-
-if __name__ == "__main__":
-    sam_module = ModuleFactory.get_module("sam2")
-    from PIL import Image
-
-    image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))
-    result: ImageParseResult = sam_module.parse(image)
-    print(result)

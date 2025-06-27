@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 from typing import List, Optional
 from PIL import Image  # 缺少这一行
-from core.imgdata.imgdata.image_parse import ImageParseItem
+from core.imgdata.image_data import ImageParseItem
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -90,11 +90,3 @@ def build_module_florence2():
 def build_module_florence2_icon():
     cfg = ModelLoader().get_model("florence2_icon")
     return Florence2Module(cfg["model"], cfg["processor"])
-
-if __name__ == "__main__":
-    florence2Module = ModuleFactory.get_module("florence2_icon")
-    from PIL import Image
-
-    image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
-    print(result)

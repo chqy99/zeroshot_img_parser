@@ -3,7 +3,7 @@
 import numpy as np
 from typing import List
 from core.pipeline.base import PipelineParser
-from core.imgdata.imgdata.image_parse import BBox, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseResult
 
 from core.modules.sam2_module import SamModule
 from core.modules.paddleocr_module import PaddleOCRModule
@@ -54,16 +54,3 @@ class SemanticParser(PipelineParser):
 
         # 6. 返回统一的 ImageParseResult
         return ImageParseResult(image=image, items=final_items)
-
-
-if __name__ == "__main__":
-    semantic_parser = SemanticParser()
-
-    # 加载图像并转换为 RGB 格式，再转 numpy
-    from PIL import Image
-
-    image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    image_np = np.array(image)
-
-    result = semantic_parser.parse(image_np)
-    print(result)
