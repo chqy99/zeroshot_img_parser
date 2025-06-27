@@ -36,5 +36,6 @@ SubPipelines:
     use_doc_unwarping: true
 pipeline_name: OCR
 text_type: general
-use_doc_preprocessor: true
+# use_doc_preprocessor: true 后，识别框会偏移
+use_doc_preprocessor: false
 use_textline_orientation: true

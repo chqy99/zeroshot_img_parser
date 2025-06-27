@@ -22,33 +22,37 @@ if __name__ == "__main__":
     # print(result)
 
     # paddleocr
-    import core.modules.paddleocr_module
-    paddleocr_module = ModuleFactory.get_module("paddleocr")
+    # import core.modules.paddleocr_module
+    # paddleocr_module = ModuleFactory.get_module("paddleocr")
 
-    image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))
-    result: ImageParseResult = paddleocr_module.parse(image)
-    # print(result)
-    vis_img = visualizer.visualize_parse_result(result, show_mask=False, show_bbox=True)
-    vis_img.save("paddleocr_bbox_overlay.png")
-    print("保存完成: paddleocr_bbox_overlay.png")
+    # image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB"))
+    # result: ImageParseResult = paddleocr_module.parse(image)
+    # # print(result)
+    # vis_img = visualizer.visualize_parse_result(result, show_mask=False, show_bbox=True)
+    # vis_img.save("./paddleocr_bbox_overlay.png")
+    # print("保存完成: paddleocr_bbox_overlay.png")
 
-    # # sam2
+    # sam2
     # import core.modules.sam2_module
     # sam_module = ModuleFactory.get_module("sam2")
 
     # image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))
     # result: ImageParseResult = sam_module.parse(image)
+    # # print(result)
+    # vis_img = visualizer.visualize_parse_result(result, show_mask=True, show_bbox=False)
+    # vis_img.save("image_sam2_vis.png")
+
+    # yolo
+    import core.modules.yolo_module
+    yoloModule = ModuleFactory.get_module("yolo")
+
+    image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
+    image_np = np.array(image)
+
+    result = yoloModule.parse(image_np)
     # print(result)
-
-    # # yolo
-    # import core.modules.yolo_module
-    # yoloModule = ModuleFactory.get_module("yolo")
-
-    # image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    # image_np = np.array(image)
-
-    # result = yoloModule.parse(image_np)
-    # print(result)
+    vis_img = visualizer.visualize_parse_result(result, show_mask=False, show_bbox=True)
+    vis_img.save("image_yolo_vis.png")
 
     # # CustomOmniParser
     # from core.pipeline.custom_omni_parser import CustomOmniParser
