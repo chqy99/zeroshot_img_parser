@@ -5,7 +5,7 @@ import math
 import matplotlib.pyplot as plt
 from typing import List, Optional
 from PIL import Image, ImageDraw
-from imgdata.image_data import ImageParseItem, ImageParseResult
+from core.imgdata.image_data import ImageParseItem, ImageParseResult
 
 # ======================== Palette ========================
 
