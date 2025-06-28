@@ -46,7 +46,7 @@ class YoloModule(BaseModule):
                 continue  # 跳过过大的框
 
             item = ImageParseItem(
-                image, "yolo", score=conf, bbox=bbox, type="region", label=label
+                image=image, source_module="yolo", score=conf, bbox=bbox, type="region", label=label
             )
             parse_items.append(item)
 

@@ -85,7 +85,7 @@ class Florence2Module(EnricherModule):
             text = self.processor.tokenizer.decode(
                 output_ids[0], skip_special_tokens=True
             )
-            obj.enrich("florence2", -1, text=text)
+            obj.enrich(source_module="florence2", score=-1, text=text)
 
         return objects
 

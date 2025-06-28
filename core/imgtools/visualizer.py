@@ -1,5 +1,5 @@
 ### img_parser/core/imgtools/visualizer.py
-
+import html
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -146,3 +146,71 @@ def visualize_parse_result(
         overlay = composite_overlap_image(np.array(overlay), np.array(bbox_overlay))
     final = composite_overlap_image(base, np.array(overlay))
     return final
+
+
+def generate_html_for_result(
+    result: ImageParseResult, show_fields: List[str] = None
+) -> str:
+    if show_fields is None:
+        show_fields = [
+            "source_module",
+            "score",
+            "type",
+            "label",
+            "text",
+            "bbox_image",
+            "mask_image",
+        ]
+
+    headers_html = "".join(f"<th>{html.escape(field)}</th>" for field in show_fields)
+
+    rows_html = ""
+    for item in result.items:
+        item_dict = item.to_dict(filter=["bbox_image", "mask_image"])
+
+        cells = []
+        for field in show_fields:
+            val = item_dict.get(field, None)
+            if val is None:
+                cells.append("<td></td>")
+            elif field in ("bbox_image", "mask_image"):
+                cells.append(
+                    f'<td><img src="data:image/png;base64,{val}" style="max-width:120px;"/></td>'
+                )
+            elif isinstance(val, list):
+                # 不截断，直接全部显示，支持换行
+                full_val = ", ".join(map(str, val))
+                cells.append(f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(full_val)}</td>')
+            else:
+                # 普通文本支持换行
+                cells.append(f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(str(val))}</td>')
+
+        rows_html += "<tr>" + "".join(cells) + "</tr>"
+
+    html_str = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>ImageParseResult Visualization</title>
+    <style>
+    body {{ font-family: Arial, sans-serif; padding: 10px; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: center; vertical-align: middle; }}
+    th {{ background-color: #f2f2f2; }}
+    img {{ max-width: 120px; height: auto; }}
+    td {{ max-width: 400px; overflow-wrap: break-word; }}
+    </style>
+    </head>
+    <body>
+    <h1>ImageParseResult Visualization</h1>
+    <table>
+    <thead><tr>{headers_html}</tr></thead>
+    <tbody>
+    {rows_html}
+    </tbody>
+    </table>
+    </body>
+    </html>
+    """
+    return html_str

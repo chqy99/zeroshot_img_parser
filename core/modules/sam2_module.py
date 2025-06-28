@@ -6,6 +6,7 @@ import numpy as np
 from typing import List
 
 from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
+from core.imgtools.process_utils import ProcessUtils
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -29,13 +30,10 @@ class SamModule(BaseModule):
         parse_res = ImageParseResult(image=image)
         for item in res:
             mask = item["segmentation"]
-            bbox_input = item["bbox"]
-            bbox = BBox(
-                bbox_input[0],
-                bbox_input[1],
-                bbox_input[0] + bbox_input[2],
-                bbox_input[1] + bbox_input[3],
-            )
+            # mask 去除毛边
+            mask = ProcessUtils.erode(mask.astype(np.uint8)).astype(np.bool_)
+            # bbox_input = item["bbox"], 不使用解析的 bbox
+            bbox = BBox.mask_to_bbox(mask)
             score = item["stability_score"]
             parse_res.items.append(
                 ImageParseItem(

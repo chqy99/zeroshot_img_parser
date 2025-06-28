@@ -5,22 +5,26 @@ import numpy as np
 from PIL import Image
 from core.imgdata.image_data import ImageParseResult, ImageParseItem
 from core.modules.module_factory import ModuleFactory
-from core.imgtools import visualizer, html_visualizer
+from core.imgtools import visualizer
 
 # ======================
 # 自动注册测试函数
 # ======================
 tests = {}
 
+
 def register_test(name):
     def decorator(func):
         tests[name] = func
         return func
+
     return decorator
+
 
 # ======================
 # 工具函数
 # ======================
+
 
 def ensure_log_dir():
     log_dir = "LOG"
@@ -28,21 +32,27 @@ def ensure_log_dir():
         os.makedirs(log_dir)
     return log_dir
 
+
 def timestamp_str():
     return time.strftime("%Y-%m-%d_%H-%M-%S")
+
 
 def save_vis_image(result: ImageParseResult, path):
     vis_img = visualizer.visualize_parse_result(result, show_mask=True, show_bbox=True)
     vis_img.save(path)
     print(f"可视化图片已保存到: {path}")
 
+
 def save_html(result: ImageParseResult, path):
-    html_content = html_visualizer.generate_html_for_result(result)
+    html_content = visualizer.generate_html_for_result(result)
     with open(path, "w", encoding="utf-8") as f:
         f.write(html_content)
     print(f"HTML 文件已保存到: {path}")
 
-def handle_output(result: ImageParseResult, output_mode: str = "print", output_path: str = None):
+
+def handle_output(
+    result: ImageParseResult, output_mode: str = "print", output_path: str = None
+):
     if output_mode == "print":
         print(result)
     elif output_mode == "img":
@@ -55,77 +65,96 @@ def handle_output(result: ImageParseResult, output_mode: str = "print", output_p
         print(f"[警告] 不支持的输出模式: {output_mode}，默认打印结果")
         print(result)
 
+
 # ======================
 # 各测试函数
 # ======================
 
+
 @register_test("paddleocr")
 def test_paddleocr(img_path, output_mode="print", output_path=None):
     import core.modules.paddleocr_module
+
     paddleocr_module = ModuleFactory.get_module("paddleocr")
     image = np.array(Image.open(img_path).convert("RGB"))
     result: ImageParseResult = paddleocr_module.parse(image)
     handle_output(result, output_mode, output_path)
 
+
 @register_test("clip")
 def test_clip(img_path, output_mode="print", output_path=None):
     import core.modules.clip_module
+
     clipModule = ModuleFactory.get_module("clip")
     image = np.array(Image.open(img_path))
     result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
+
 @register_test("florence2")
 def test_florence2(img_path, output_mode="print", output_path=None):
     import core.modules.florence2_module
+
     florence2Module = ModuleFactory.get_module("florence2")
     image = np.array(Image.open(img_path))
     result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
+
 @register_test("florence2_icon")
 def test_florence2_icon(img_path, output_mode="print", output_path=None):
     import core.modules.florence2_module
+
     florence2Module = ModuleFactory.get_module("florence2_icon")
     image = np.array(Image.open(img_path))
     result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
+
 @register_test("sam2")
 def test_sam2(img_path, output_mode="print", output_path=None):
     import core.modules.sam2_module
+
     sam_module = ModuleFactory.get_module("sam2")
     image = np.array(Image.open(img_path))
     result: ImageParseResult = sam_module.parse(image)
     handle_output(result, output_mode, output_path)
 
+
 @register_test("yolo")
 def test_yolo(img_path, output_mode="print", output_path=None):
     import core.modules.yolo_module
+
     yoloModule = ModuleFactory.get_module("yolo")
     image = np.array(Image.open(img_path).convert("RGB"))
     result = yoloModule.parse(image)
     handle_output(result, output_mode, output_path)
 
+
 @register_test("custom_omni_parser")
 def test_custom_omni_parser(img_path, output_mode="print", output_path=None):
     from core.pipeline.custom_omni_parser import CustomOmniParser
+
     omni_parser = CustomOmniParser()
     image = np.array(Image.open(img_path).convert("RGB"))
     result = omni_parser.parse(image)
     handle_output(result, output_mode, output_path)
 
+
 @register_test("semantic_parser")
 def test_semantic_parser(img_path, output_mode="print", output_path=None):
     from core.pipeline.semantic_parser import SemanticParser
+
     semantic_parser = SemanticParser()
     image = np.array(Image.open(img_path).convert("RGB"))
     result = semantic_parser.parse(image)
     handle_output(result, output_mode, output_path)
 
+
 # ======================
 # 主程序入口
 # ======================
+
 
 def main():
     if len(sys.argv) < 3:
@@ -154,6 +183,7 @@ def main():
         return
 
     tests[test_name](img_path, output_mode, output_path)
+
 
 if __name__ == "__main__":
     main()

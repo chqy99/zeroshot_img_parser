@@ -54,7 +54,7 @@ class ClipModule(EnricherModule):
                 )
 
             label, score = self._classify(image)
-            obj.enrich("clip", score, label=label)
+            obj.enrich(source_module="clip", score=score, label=label)
         return objects
 
     def _classify(self, image: np.ndarray):

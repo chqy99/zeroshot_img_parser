@@ -59,29 +59,6 @@ class BBox:
             x1=float(cols[0]), y1=float(rows[0]), x2=float(cols[-1]), y2=float(rows[-1])
         )
 
-    @staticmethod
-    def compute_iou(box1: "BBox", box2: "BBox") -> float:
-        """
-        计算两个 BBox 之间的 IoU（交并比）
-        """
-        x_left = max(box1.x1, box2.x1)
-        y_top = max(box1.y1, box2.y1)
-        x_right = min(box1.x2, box2.x2)
-        y_bottom = min(box1.y2, box2.y2)
-
-        if x_right < x_left or y_bottom < y_top:
-            return 0.0
-
-        intersection_area = (x_right - x_left) * (y_bottom - y_top)
-        box1_area = box1.area()
-        box2_area = box2.area()
-        union_area = box1_area + box2_area - intersection_area
-
-        if union_area == 0:
-            return 0.0
-
-        return intersection_area / union_area
-
 
 # 初始化时必须提供的参数: image, source_module, score, bbox
 # 模型增强只提供 label、text、metadata 这些内容理解，不能改变 bbox,mask 这些位置信息
@@ -90,31 +67,63 @@ class BBox:
 @dataclass
 class ImageParseItem:
     image: np.ndarray
-    source_module: List[str]
-    score: List[float]
     bbox: BBox
-    type: Literal["ocr", "icon", "instance", "region"] = "region"
     mask: Optional[np.ndarray] = None
-    label: Optional[str] = None
-    text: Optional[str] = None
-    bbox_image: np.ndarray = None
+    bbox_image: Optional[np.ndarray] = None
     mask_image: Optional[np.ndarray] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    # 多来源平铺存储，索引对应
+    source_module: List[Optional[str]] = field(default_factory=list)
+    score: List[Optional[float]] = field(default_factory=list)
+    type: List[Optional[str]] = field(default_factory=list)
+    label: List[Optional[str]] = field(default_factory=list)
+    text: List[Optional[str]] = field(default_factory=list)
+
+    metadata: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        if not isinstance(self.source_module, list):
-            self.source_module = [self.source_module]
-        if not isinstance(self.score, list):
-            self.score = [self.score]
+        # 确保各字段都是列表（防止误传单值）
+        for attr in ["source_module", "score", "type", "label", "text"]:
+            val = getattr(self, attr)
+            if val is None:
+                setattr(self, attr, [None])
+            elif not isinstance(val, list):
+                setattr(self, attr, [val])
 
-    def enrich(self, source_module: str, score: float, **kwargs):
+    def enrich(self, source_module: Optional[str], score: Optional[float], **kwargs):
+        # 追加新来源的信息，若无值则追加 None，保持索引对齐
         self.source_module.append(source_module)
         self.score.append(score)
-        for key, value in kwargs.items():
-            if key in self.__dataclass_fields__:
-                setattr(self, key, value)
-            else:
-                self.metadata[key] = value
+        self.type.append(kwargs.pop("type", None))
+        self.label.append(kwargs.pop("label", None))
+        self.text.append(kwargs.pop("text", None))
+
+        # 其余字段放metadata（后续扩展用）
+        for k, v in kwargs.items():
+            self.metadata[k] = v
+
+    def enrich_by_item(self, item: "ImageParseItem"):
+        """
+        使用另一个 ImageParseItem 的解析结果，追加到当前对象。
+        对 source_module, score, type, label, text 分别追加对应的第一个值，
+        其余 metadata 合并（后者覆盖前者相同key）。
+        """
+        # 取 item 中第一个值（若是列表），否则直接取值
+        def first_or_none(value):
+            if value is None:
+                return None
+            if isinstance(value, list):
+                return value[0] if len(value) > 0 else None
+            return value
+
+        self.enrich(
+            source_module=first_or_none(item.source_module),
+            score=first_or_none(item.score),
+            type=first_or_none(item.type),
+            label=first_or_none(item.label),
+            text=first_or_none(item.text),
+            **item.metadata
+        )
 
     def get_bbox_image(self) -> np.ndarray:
         if self.bbox_image is None:
@@ -126,10 +135,14 @@ class ImageParseItem:
             # 裁剪图片和 mask 到 bbox 范围
             cropped_img = self.bbox.crop(self.image)
             # 裁剪 mask（假设 mask 是与 image 同尺寸的二值掩码）
-            x1, y1, x2, y2 = map(int, [self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2])
+            x1, y1, x2, y2 = map(
+                int, [self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2]
+            )
             cropped_mask = self.mask[y1:y2, x1:x2].astype(np.uint8)
             # 对裁剪后的图片应用掩码
-            self.mask_image = cv2.bitwise_and(cropped_img, cropped_img, mask=cropped_mask)
+            self.mask_image = cv2.bitwise_and(
+                cropped_img, cropped_img, mask=cropped_mask
+            )
         return self.mask_image
 
     def to_dict(self, filter: List[str] = []) -> Dict[str, Any]:

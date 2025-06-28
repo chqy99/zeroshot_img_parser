@@ -13,6 +13,7 @@ def load_model_paddleocr(cfg, device):
     device = "gpu" if device == "cuda" else device
     model = PaddleOCR(paddlex_config=cfg.get("paddlex_config", None), device="gpu")
     import paddle
+
     print("是否支持 GPU：", paddle.device.is_compiled_with_cuda())
     print("推理时使用设备:", paddle.device.get_device())
     return model
@@ -49,7 +50,7 @@ class PaddleOCRModule(BaseModule):
 
             res.items.append(
                 ImageParseItem(
-                    image, "paddleocr", score[i], bbox, type="ocr", text=text[i]
+                    image=image, source_module="paddleocr", score=score[i], bbox=bbox, type="ocr", text=text[i]
                 )
             )
         return res
