@@ -2,13 +2,24 @@ import html
 from typing import List
 from core.imgdata.image_data import ImageParseResult, ImageParseItem
 
-def generate_html_for_result(result: ImageParseResult, show_fields: List[str] = None) -> str:
+
+def generate_html_for_result(
+    result: ImageParseResult, show_fields: List[str] = None
+) -> str:
     """
     生成一个 HTML 页面，展示 ImageParseResult 各 ImageParseItem 的内容。
     show_fields 控制显示哪些字段，默认显示主要文本字段和图片。
     """
     if show_fields is None:
-        show_fields = ["source_module", "score", "type", "label", "text", "bbox_image", "mask_image"]
+        show_fields = [
+            "source_module",
+            "score",
+            "type",
+            "label",
+            "text",
+            "bbox_image",
+            "mask_image",
+        ]
 
     # 表头HTML
     headers_html = "".join(f"<th>{html.escape(field)}</th>" for field in show_fields)
@@ -25,7 +36,9 @@ def generate_html_for_result(result: ImageParseResult, show_fields: List[str] = 
                 cells.append("<td></td>")
             elif field in ("bbox_image", "mask_image"):
                 # 图片字段，val 是base64字符串，生成 img标签
-                cells.append(f'<td><img src="data:image/png;base64,{val}" style="max-width:120px;"/></td>')
+                cells.append(
+                    f'<td><img src="data:image/png;base64,{val}" style="max-width:120px;"/></td>'
+                )
             elif isinstance(val, list):
                 # 数组字段转成逗号字符串，防止过长截断
                 short_val = ", ".join(map(str, val))

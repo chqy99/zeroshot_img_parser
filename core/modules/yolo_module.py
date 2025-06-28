@@ -7,11 +7,13 @@ from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
 
+
 @ModelLoader.register_loader("yolo")
 def load_model_yolo(cfg, device):
     ckpt = cfg.get("checkpoint")
     model = YOLO(ckpt).to(device)
     return model
+
 
 class YoloModule(BaseModule):
     def __init__(self, model):
@@ -44,6 +46,7 @@ class YoloModule(BaseModule):
             parse_items.append(item)
 
         return ImageParseResult(image=image, items=parse_items)
+
 
 @ModuleFactory.register_module("yolo")
 def build_module_yolo():

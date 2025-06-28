@@ -9,6 +9,7 @@ from core.modules.sam2_module import SamModule
 from core.modules.paddleocr_module import PaddleOCRModule
 from core.modules.florence2_module import Florence2Module
 
+
 class SemanticParser(PipelineParser):
     def __init__(self):
         super().__init__(module_names=["sam2", "paddleocr", "florence2"])
@@ -40,7 +41,8 @@ class SemanticParser(PipelineParser):
         for mask_item in masks:
             mask_bbox = mask_item.bbox
             max_iou = max(
-                (bbox_iou(mask_bbox, ocr_item.bbox) for ocr_item in ocr_items), default=0
+                (bbox_iou(mask_bbox, ocr_item.bbox) for ocr_item in ocr_items),
+                default=0,
             )
             if max_iou < 0.5:
                 filtered_masks.append(mask_item)

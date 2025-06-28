@@ -1,5 +1,6 @@
 # core/modules/module_factory.py
 
+
 class ModuleFactory:
     _registry = {}
 
@@ -8,6 +9,7 @@ class ModuleFactory:
         def decorator(fn):
             cls._registry[name] = fn
             return fn
+
         return decorator
 
     @classmethod

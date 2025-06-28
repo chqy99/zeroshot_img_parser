@@ -8,15 +8,19 @@ from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
 
+
 @ModelLoader.register_loader("clip")
 def load_model_clip(cfg, device):
     processor = AutoProcessor.from_pretrained(cfg["processor"])
-    model = AutoModelForZeroShotImageClassification.from_pretrained(cfg["model"]).to(device)
+    model = AutoModelForZeroShotImageClassification.from_pretrained(cfg["model"]).to(
+        device
+    )
     return {
         "processor": processor,
         "model": model,
         "label_texts": cfg.get("label_texts", []),
     }
+
 
 class ClipModule(EnricherModule):
     def __init__(self, model, processor, label_texts, device="cuda"):
@@ -43,7 +47,11 @@ class ClipModule(EnricherModule):
             elif filter == "image":
                 image = obj.image
             else:  # 默认 bbox
-                image = obj.bbox_image if obj.bbox_image is not None else obj.get_bbox_image()
+                image = (
+                    obj.bbox_image
+                    if obj.bbox_image is not None
+                    else obj.get_bbox_image()
+                )
 
             label, score = self._classify(image)
             obj.enrich("clip", score, label=label)
@@ -69,12 +77,12 @@ class ClipModule(EnricherModule):
         text_features = self.model.get_text_features(**text_inputs)
         return text_features / text_features.norm(dim=-1, keepdim=True)
 
+
 @ModuleFactory.register_module("clip")
 def build_module_clip():
     model_bundle = ModelLoader().get_model("clip")
     return ClipModule(
         model=model_bundle["model"],
         processor=model_bundle["processor"],
-        label_texts=model_bundle["label_texts"]
+        label_texts=model_bundle["label_texts"],
     )
-

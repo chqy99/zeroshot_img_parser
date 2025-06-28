@@ -11,6 +11,7 @@ from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
 
+
 @ModelLoader.register_loader("florence2")
 def load_model_florence2(cfg, device):
     processor = AutoProcessor.from_pretrained(cfg["processor"], trust_remote_code=True)
@@ -22,9 +23,11 @@ def load_model_florence2(cfg, device):
         "model": model,
     }
 
+
 @ModelLoader.register_loader("florence2_icon")
 def load_model_florence2_icon(cfg, device):
     return load_model_florence2(cfg, device)
+
 
 class Florence2Module(EnricherModule):
     def __init__(self, model, processor, device="cuda"):
@@ -55,7 +58,11 @@ class Florence2Module(EnricherModule):
             elif filter == "image":
                 image = obj.image
             else:  # 默认 bbox
-                image = obj.bbox_image if obj.bbox_image is not None else obj.get_bbox_image()
+                image = (
+                    obj.bbox_image
+                    if obj.bbox_image is not None
+                    else obj.get_bbox_image()
+                )
 
             image = to_pil(image).convert("RGB")
 
@@ -70,7 +77,7 @@ class Florence2Module(EnricherModule):
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
                     temperature=0.7,
-                    max_length=128
+                    max_length=128,
                 )
 
             # 解码为文本
@@ -81,10 +88,12 @@ class Florence2Module(EnricherModule):
 
         return objects
 
+
 @ModuleFactory.register_module("florence2")
 def build_module_florence2():
     cfg = ModelLoader().get_model("florence2")
     return Florence2Module(cfg["model"], cfg["processor"])
+
 
 @ModuleFactory.register_module("florence2_icon")
 def build_module_florence2_icon():

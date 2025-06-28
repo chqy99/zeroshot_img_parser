@@ -52,9 +52,11 @@ class ModelLoader:
     @classmethod
     def register_loader(cls, name):
         """注册模型加载函数的装饰器"""
+
         def wrapper(fn):
             cls._loaders[name] = fn
             return fn
+
         return wrapper
 
     def __init__(self, config_path=None, device="cuda"):

@@ -10,14 +10,18 @@ from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
 
+
 @ModelLoader.register_loader("sam2")
 def load_model_sam2(cfg, device):
     return build_sam2(cfg["model_cfg"], cfg["checkpoint"]).to(device)
 
+
 class SamModule(BaseModule):
     def __init__(self, model):
         self.model = model
-        self.mask_generator = SAM2AutomaticMaskGenerator(self.model)
+        self.mask_generator = SAM2AutomaticMaskGenerator(
+            self.model, box_nms_thresh=0.5, crop_nms_thresh=0.5, multimask_output=False
+        )
         self.predictor = SAM2ImagePredictor(self.model)
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
@@ -60,6 +64,7 @@ class SamModule(BaseModule):
         return ImageParseItem(
             image, "sam2", scores[max_index], bbox, masks[max_index], type="instance"
         )
+
 
 @ModuleFactory.register_module("sam2")
 def build_module_sam2():

@@ -6,12 +6,17 @@ from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
 
+
 @ModelLoader.register_loader("paddleocr")
 def load_model_paddleocr(cfg, device):
     # PaddleOCR 的 device 参数要传字符串 "gpu" 或 "cpu"
     device = "gpu" if device == "cuda" else device
     model = PaddleOCR(paddlex_config=cfg.get("paddlex_config", None), device="gpu")
+    import paddle
+    print("是否支持 GPU：", paddle.device.is_compiled_with_cuda())
+    print("推理时使用设备:", paddle.device.get_device())
     return model
+
 
 class PaddleOCRModule(BaseModule):
     def __init__(self, model):
@@ -42,6 +47,7 @@ class PaddleOCRModule(BaseModule):
                 )
             )
         return res
+
 
 @ModuleFactory.register_module("paddleocr")
 def build_module_paddleocr():

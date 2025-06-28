@@ -7,8 +7,8 @@ sam2:
   checkpoint: 'checkpoints/sam2.1/sam2.1_hiera_large.pt'
 clip:
   preload: false
-  processor: 'openai/clip-vit-base-patch32'
-  model: 'openai/clip-vit-base-patch32'
+  processor: 'checkpoints/clip-vit-base-patch32/processor'
+  model: 'checkpoints/clip-vit-base-patch32/model'
   label_texts:
     - 'button'
     - 'unknown'
