@@ -1,83 +1,157 @@
-from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
-from core.modules.module_factory import ModuleFactory
-from core.imgtools import visualizer, html_visualizer
+import sys
+import os
+import time
 import numpy as np
 from PIL import Image
+from core.imgdata.image_data import ImageParseResult, ImageParseItem
+from core.modules.module_factory import ModuleFactory
+from core.imgtools import visualizer, html_visualizer
 
-if __name__ == "__main__":
-    # # clip
-    # import core.modules.clip_module
-    # clipModule = ModuleFactory.get_module("clip")
-    # from PIL import Image
+# ======================
+# 自动注册测试函数
+# ======================
+tests = {}
 
-    # image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    # result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
-    # print(result)
+def register_test(func):
+    tests[func.__name__] = func
+    return func
 
-    # # florence2
-    # import core.modules.florence2_module
-    # florence2Module = ModuleFactory.get_module("florence2_icon")
-    # image = np.array(Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image1.png"))
-    # result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
-    # print(result)
+# ======================
+# 工具函数
+# ======================
 
-    # paddleocr
-    # import core.modules.paddleocr_module
-    # paddleocr_module = ModuleFactory.get_module("paddleocr")
+def ensure_log_dir():
+    log_dir = "LOG"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    return log_dir
 
-    # image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB"))
-    # result: ImageParseResult = paddleocr_module.parse(image)
-    # # print(result)
-    # # vis_img = visualizer.visualize_parse_result(result, show_mask=False, show_bbox=True)
-    # # vis_img.save("./paddleocr_bbox_overlay.png")
-    # # print("保存完成: paddleocr_bbox_overlay.png")
-    # html_content = html_visualizer.generate_html_for_result(result)
-    # with open("parse_result_visualization.html", "w", encoding="utf-8") as f:
-    #     f.write(html_content)
-    # print("HTML 文件已保存，打开查看")
+def timestamp_str():
+    return time.strftime("%Y-%m-%d_%H-%M-%S")
 
-    # sam2
+def save_vis_image(result: ImageParseResult, path):
+    vis_img = visualizer.visualize_parse_result(result, show_mask=True, show_bbox=True)
+    vis_img.save(path)
+    print(f"可视化图片已保存到: {path}")
+
+def save_html(result: ImageParseResult, path):
+    html_content = html_visualizer.generate_html_for_result(result)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"HTML 文件已保存到: {path}")
+
+def handle_output(result: ImageParseResult, output_mode: str = "print", output_path: str = None):
+    if output_mode == "print":
+        print(result)
+    elif output_mode == "img":
+        path = output_path or os.path.join(ensure_log_dir(), f"{timestamp_str()}.png")
+        save_vis_image(result, path)
+    elif output_mode == "html":
+        path = output_path or os.path.join(ensure_log_dir(), f"{timestamp_str()}.html")
+        save_html(result, path)
+    else:
+        print(f"[警告] 不支持的输出模式: {output_mode}，默认打印结果")
+        print(result)
+
+# ======================
+# 各测试函数
+# ======================
+
+@register_test
+def test_paddleocr(img_path, output_mode="print", output_path=None):
+    import core.modules.paddleocr_module
+    paddleocr_module = ModuleFactory.get_module("paddleocr")
+    image = np.array(Image.open(img_path).convert("RGB"))
+    result: ImageParseResult = paddleocr_module.parse(image)
+    handle_output(result, output_mode, output_path)
+
+@register_test
+def test_clip(img_path, output_mode="print", output_path=None):
+    import core.modules.clip_module
+    clipModule = ModuleFactory.get_module("clip")
+    image = np.array(Image.open(img_path))
+    result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    print(result)
+
+@register_test
+def test_florence2(img_path, output_mode="print", output_path=None):
+    import core.modules.florence2_module
+    florence2Module = ModuleFactory.get_module("florence2")
+    image = np.array(Image.open(img_path))
+    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    print(result)
+
+@register_test
+def test_florence2_icon(img_path, output_mode="print", output_path=None):
+    import core.modules.florence2_module
+    florence2Module = ModuleFactory.get_module("florence2_icon")
+    image = np.array(Image.open(img_path))
+    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    print(result)
+
+@register_test
+def test_sam2(img_path, output_mode="print", output_path=None):
     import core.modules.sam2_module
     sam_module = ModuleFactory.get_module("sam2")
-
-    image = np.array(Image.open(r"/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg"))
+    image = np.array(Image.open(img_path))
     result: ImageParseResult = sam_module.parse(image)
-    # # print(result)
-    # vis_img = visualizer.visualize_parse_result(result, show_mask=True, show_bbox=False)
-    # vis_img.save("image_sam2_vis.png")
-    html_content = html_visualizer.generate_html_for_result(result)
-    with open("parse_result_visualization.html", "w", encoding="utf-8") as f:
-        f.write(html_content)
-    print("HTML 文件已保存，打开查看")
+    handle_output(result, output_mode, output_path)
 
-    # yolo
-    # import core.modules.yolo_module
-    # yoloModule = ModuleFactory.get_module("yolo")
+@register_test
+def test_yolo(img_path, output_mode="print", output_path=None):
+    import core.modules.yolo_module
+    yoloModule = ModuleFactory.get_module("yolo")
+    image = np.array(Image.open(img_path).convert("RGB"))
+    result = yoloModule.parse(image)
+    handle_output(result, output_mode, output_path)
 
-    # image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    # image_np = np.array(image)
+@register_test
+def test_custom_omni_parser(img_path, output_mode="print", output_path=None):
+    from core.pipeline.custom_omni_parser import CustomOmniParser
+    omni_parser = CustomOmniParser()
+    image = np.array(Image.open(img_path).convert("RGB"))
+    result = omni_parser.parse(image)
+    handle_output(result, output_mode, output_path)
 
-    # result = yoloModule.parse(image_np)
-    # # print(result)
-    # vis_img = visualizer.visualize_parse_result(result, show_mask=False, show_bbox=True)
-    # vis_img.save("image_yolo_vis.png")
+@register_test
+def test_semantic_parser(img_path, output_mode="print", output_path=None):
+    from core.pipeline.semantic_parser import SemanticParser
+    semantic_parser = SemanticParser()
+    image = np.array(Image.open(img_path).convert("RGB"))
+    result = semantic_parser.parse(image)
+    handle_output(result, output_mode, output_path)
 
-    # # CustomOmniParser
-    # from core.pipeline.custom_omni_parser import CustomOmniParser
-    # omni_parser = CustomOmniParser()
+# ======================
+# 主程序入口
+# ======================
 
-    # image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    # image_np = np.array(image)
+def main():
+    if len(sys.argv) < 3:
+        print("用法： python test.py <测试名> <图片路径> [输出模式] [输出路径]")
+        print("输出模式可选： print（默认）、img、html")
+        print("示例： python test.py paddleocr E:/img.png img")
+        print("支持的测试名：")
+        for name in tests:
+            print(" -", name)
+        return
 
-    # result = omni_parser.parse(image_np)
-    # print(result)
+    test_name = sys.argv[1]
+    img_path = sys.argv[2]
+    output_mode = sys.argv[3] if len(sys.argv) > 3 else "print"
+    output_path = sys.argv[4] if len(sys.argv) > 4 else None
 
-    # # SemanticParser
-    # from core.pipeline.semantic_parser import SemanticParser
-    # semantic_parser = SemanticParser()
+    if test_name not in tests:
+        print(f"未知测试名：{test_name}")
+        print("支持的测试名：")
+        for name in tests:
+            print(" -", name)
+        return
 
-    # image = Image.open("/MLU_OPS/DEV_SOFT_TRAIN/chenqiyang/image.jpg").convert("RGB")
-    # image_np = np.array(image)
+    if not os.path.isfile(img_path):
+        print(f"图片路径不存在或不是文件：{img_path}")
+        return
 
-    # result = semantic_parser.parse(image_np)
-    # print(result)
+    tests[test_name](img_path, output_mode, output_path)
+
+if __name__ == "__main__":
+    main()
