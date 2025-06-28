@@ -76,6 +76,7 @@ class Florence2Module(EnricherModule):
                 output_ids = self.model.generate(
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
+                    do_sample=True,
                     temperature=0.7,
                     max_length=128,
                 )

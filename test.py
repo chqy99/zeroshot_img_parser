@@ -12,9 +12,11 @@ from core.imgtools import visualizer, html_visualizer
 # ======================
 tests = {}
 
-def register_test(func):
-    tests[func.__name__] = func
-    return func
+def register_test(name):
+    def decorator(func):
+        tests[name] = func
+        return func
+    return decorator
 
 # ======================
 # 工具函数
@@ -57,7 +59,7 @@ def handle_output(result: ImageParseResult, output_mode: str = "print", output_p
 # 各测试函数
 # ======================
 
-@register_test
+@register_test("paddleocr")
 def test_paddleocr(img_path, output_mode="print", output_path=None):
     import core.modules.paddleocr_module
     paddleocr_module = ModuleFactory.get_module("paddleocr")
@@ -65,7 +67,7 @@ def test_paddleocr(img_path, output_mode="print", output_path=None):
     result: ImageParseResult = paddleocr_module.parse(image)
     handle_output(result, output_mode, output_path)
 
-@register_test
+@register_test("clip")
 def test_clip(img_path, output_mode="print", output_path=None):
     import core.modules.clip_module
     clipModule = ModuleFactory.get_module("clip")
@@ -73,7 +75,7 @@ def test_clip(img_path, output_mode="print", output_path=None):
     result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
-@register_test
+@register_test("florence2")
 def test_florence2(img_path, output_mode="print", output_path=None):
     import core.modules.florence2_module
     florence2Module = ModuleFactory.get_module("florence2")
@@ -81,7 +83,7 @@ def test_florence2(img_path, output_mode="print", output_path=None):
     result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
-@register_test
+@register_test("florence2_icon")
 def test_florence2_icon(img_path, output_mode="print", output_path=None):
     import core.modules.florence2_module
     florence2Module = ModuleFactory.get_module("florence2_icon")
@@ -89,7 +91,7 @@ def test_florence2_icon(img_path, output_mode="print", output_path=None):
     result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
     print(result)
 
-@register_test
+@register_test("sam2")
 def test_sam2(img_path, output_mode="print", output_path=None):
     import core.modules.sam2_module
     sam_module = ModuleFactory.get_module("sam2")
@@ -97,7 +99,7 @@ def test_sam2(img_path, output_mode="print", output_path=None):
     result: ImageParseResult = sam_module.parse(image)
     handle_output(result, output_mode, output_path)
 
-@register_test
+@register_test("yolo")
 def test_yolo(img_path, output_mode="print", output_path=None):
     import core.modules.yolo_module
     yoloModule = ModuleFactory.get_module("yolo")
@@ -105,7 +107,7 @@ def test_yolo(img_path, output_mode="print", output_path=None):
     result = yoloModule.parse(image)
     handle_output(result, output_mode, output_path)
 
-@register_test
+@register_test("custom_omni_parser")
 def test_custom_omni_parser(img_path, output_mode="print", output_path=None):
     from core.pipeline.custom_omni_parser import CustomOmniParser
     omni_parser = CustomOmniParser()
@@ -113,7 +115,7 @@ def test_custom_omni_parser(img_path, output_mode="print", output_path=None):
     result = omni_parser.parse(image)
     handle_output(result, output_mode, output_path)
 
-@register_test
+@register_test("semantic_parser")
 def test_semantic_parser(img_path, output_mode="print", output_path=None):
     from core.pipeline.semantic_parser import SemanticParser
     semantic_parser = SemanticParser()

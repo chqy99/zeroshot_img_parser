@@ -27,11 +27,13 @@ clip:
     - 'time'
 florence2:
   preload: false
-  processor: 'microsoft/Florence-2-large'
-  model: 'microsoft/Florence-2-large'
+  # 'microsoft/Florence-2-large'
+  processor: 'checkpoints/Florence-2-large'
+  model: 'checkpoints/Florence-2-large'
 florence2_icon:
   preload: false
-  processor: 'microsoft/Florence-2-base'
+  # 'microsoft/Florence-2-base'
+  processor: 'checkpoints/Florence-2-base'
   model: 'checkpoints/icon_caption_florence'
 yolo:
   preload: false
