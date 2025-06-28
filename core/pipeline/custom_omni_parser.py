@@ -3,7 +3,7 @@
 import numpy as np
 from typing import List
 from core.pipeline.base import PipelineParser
-from core.imgdata.image_data import ImageParseResult, ImageParseItem
+from core.imgdata.image_data import BBox, ImageParseResult, ImageParseItem
 
 from core.modules.yolo_module import YoloModule
 from core.modules.paddleocr_module import PaddleOCRModule
@@ -17,26 +17,35 @@ class CustomOmniParser(PipelineParser):
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
         result = ImageParseResult(image=image)
 
-        # 1. 使用 YOLO 检测区域元素
-        yolo: YoloModule = self.get_module("yolo")
-        det_result: ImageParseResult = yolo.parse(image, **kwargs)
-        result.items.extend(det_result.items)
-
-        # 2. 针对每个区域做 OCR（使用 get_bbox_image）
+        # 1. 全图 OCR
         ocr: PaddleOCRModule = self.get_module("paddleocr")
-        for item in det_result.items:
-            crop = item.get_bbox_image()
-            ocr_result = ocr.parse(crop, **kwargs)
-            for ocr_item in ocr_result.items:
-                # 用 metadata 指明 OCR 来源于哪个 region
-                ocr_item.metadata["region_bbox"] = item.bbox.to_dict()
-                result.items.append(ocr_item)
+        ocr_result: ImageParseResult = ocr.parse(image, **kwargs)
+        ocr_items = ocr_result.items
 
-        # 3. 使用 Florence2_icon 进行语义解释（逐个区域）
+        # 2. 全图 YOLO
+        yolo: YoloModule = self.get_module("yolo")
+        yolo_result: ImageParseResult = yolo.parse(image, **kwargs)
+        yolo_items = yolo_result.items
+
+        # 3. 计算 IOU，剔除与 OCR 重叠的 YOLO 区域
+        iou_threshold = kwargs.get("iou_threshold", 0.5)
+        kept_yolo_items = []
+        for yolo_item in yolo_items:
+            max_iou = max(
+                (BBox.compute_iou(yolo_item.bbox, ocr_item.bbox) for ocr_item in ocr_items),
+                default=0.0,
+            )
+            if max_iou < iou_threshold:
+                kept_yolo_items.append(yolo_item)
+
+        # 4. 对保留的 YOLO 区域做 Florence2 ICON 识别
         flor: Florence2Module = self.get_module("florence2_icon")
         flor_items: List[ImageParseItem] = flor.parse(
-            det_result.items, prompt="<CAPTION>", **kwargs
+            kept_yolo_items, prompt="<CAPTION>", **kwargs
         )
+
+        # 5. 合并 OCR 和 Florence 结果
+        result.items.extend(ocr_items)
         result.items.extend(flor_items)
 
         return result

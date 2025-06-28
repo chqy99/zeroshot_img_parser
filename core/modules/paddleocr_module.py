@@ -30,6 +30,9 @@ class PaddleOCRModule(BaseModule):
             result[0]["rec_texts"],
             result[0]["rec_scores"],
         )
+
+        score_threshold = kwargs.get("score_threshold", 0.8)  # 用户可指定分数阈值
+
         for i in range(len(box)):
             poly = box[i]
             x_coords = poly[:, 0]
@@ -40,6 +43,9 @@ class PaddleOCRModule(BaseModule):
                 x2=float(max(x_coords)),
                 y2=float(max(y_coords)),
             )
+
+            if score_threshold is not None and score[i] < score_threshold:
+                continue
 
             res.items.append(
                 ImageParseItem(

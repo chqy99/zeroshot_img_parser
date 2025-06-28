@@ -33,6 +33,8 @@ class YoloModule(BaseModule):
 
         parse_items: List[ImageParseItem] = []
 
+        max_area = kwargs.get("max_area", None)  # 用户可指定面积上限
+
         for i in range(len(boxes)):
             xyxy = boxes.xyxy[i].cpu().numpy().tolist()  # [x1, y1, x2, y2]
             conf = float(boxes.conf[i].item())
@@ -40,6 +42,9 @@ class YoloModule(BaseModule):
             label = names.get(cls_id, str(cls_id))  # 类别名字符串
 
             bbox = BBox(*xyxy)  # 假设 BBox 接受 4 个 float 值
+            if max_area is not None and bbox.area() > max_area:
+                continue  # 跳过过大的框
+
             item = ImageParseItem(
                 image, "yolo", score=conf, bbox=bbox, type="region", label=label
             )

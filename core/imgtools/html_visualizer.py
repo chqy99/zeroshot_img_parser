@@ -54,6 +54,7 @@ def generate_html_for_result(
     <!DOCTYPE html>
     <html>
     <head>
+    <meta charset="UTF-8">
     <title>ImageParseResult Visualization</title>
     <style>
     body {{ font-family: Arial, sans-serif; padding: 10px; }}

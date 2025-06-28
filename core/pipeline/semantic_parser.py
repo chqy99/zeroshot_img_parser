@@ -15,9 +15,8 @@ class SemanticParser(PipelineParser):
         super().__init__(module_names=["sam2", "paddleocr", "florence2"])
 
     def parse(self, image: np.ndarray, **kwargs) -> ImageParseResult:
-        sam_module: SamModule = self.get_module("sam2")
-
         # 1. 获取 mask 实例分割结果
+        sam_module: SamModule = self.get_module("sam2")
         mask_result = sam_module.parse(image)
         masks = mask_result.items
 
@@ -27,24 +26,15 @@ class SemanticParser(PipelineParser):
         ocr_items = ocr_result.items
 
         # 3. 计算 IoU，筛除与 OCR 有较大重叠的 mask
-        def bbox_iou(boxA: BBox, boxB: BBox) -> float:
-            xA = max(boxA.x1, boxB.x1)
-            yA = max(boxA.y1, boxB.y1)
-            xB = min(boxA.x2, boxB.x2)
-            yB = min(boxA.y2, boxB.y2)
-            interArea = max(0, xB - xA) * max(0, yB - yA)
-            boxAArea = (boxA.x2 - boxA.x1) * (boxA.y2 - boxA.y1)
-            boxBArea = (boxB.x2 - boxB.x1) * (boxB.y2 - boxB.y1)
-            return interArea / float(boxAArea + boxBArea - interArea + 1e-6)
-
+        iou_threshold = kwargs.get("iou_threshold", 0.5)
         filtered_masks = []
         for mask_item in masks:
             mask_bbox = mask_item.bbox
             max_iou = max(
-                (bbox_iou(mask_bbox, ocr_item.bbox) for ocr_item in ocr_items),
+                (BBox.compute_iou(mask_bbox, ocr_item.bbox) for ocr_item in ocr_items),
                 default=0,
             )
-            if max_iou < 0.5:
+            if max_iou < iou_threshold:
                 filtered_masks.append(mask_item)
 
         # 4. 使用 Florence2 只对 mask 区域进行语义丰富
