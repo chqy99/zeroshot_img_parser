@@ -30,10 +30,11 @@ def load_model_florence2_icon(cfg, device):
 
 
 class Florence2Module(EnricherModule):
-    def __init__(self, model, processor, device="cuda"):
+    def __init__(self, model, processor, source_name="florence2", device="cuda"):
         self.model = model
         self.processor = processor
         self.device = device
+        self.source_name = source_name
 
     # prompt: ['<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>',
     #          '<OD>', '<DENSE_REGION_CAPTION>', '<REGION_PROPOSAL>', '<CAPTION_TO_PHRASE_GROUNDING>',
@@ -85,7 +86,7 @@ class Florence2Module(EnricherModule):
             text = self.processor.tokenizer.decode(
                 output_ids[0], skip_special_tokens=True
             )
-            obj.enrich(source_module="florence2", score=-1, text=text)
+            obj.enrich(source_module=self.source_name, score=-1, text=text)
 
         return objects
 
@@ -99,4 +100,4 @@ def build_module_florence2():
 @ModuleFactory.register_module("florence2_icon")
 def build_module_florence2_icon():
     cfg = ModelLoader().get_model("florence2_icon")
-    return Florence2Module(cfg["model"], cfg["processor"])
+    return Florence2Module(cfg["model"], cfg["processor"], "florence2_icon")
