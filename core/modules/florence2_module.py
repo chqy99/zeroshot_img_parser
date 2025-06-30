@@ -18,6 +18,9 @@ def load_model_florence2(cfg, device):
     model = AutoModelForCausalLM.from_pretrained(
         cfg["model"], trust_remote_code=True, torch_dtype="float16"
     ).to(device)
+    # 保存成 safetensors 类型文件，提高加载速度
+    # 需要注释掉 assert config.vision_config.model_type == 'davit'...
+    # model.save_pretrained(cfg["model"], safe_serialization=True)
     return {
         "processor": processor,
         "model": model,
