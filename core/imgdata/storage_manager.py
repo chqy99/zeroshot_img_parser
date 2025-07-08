@@ -154,3 +154,19 @@ class StorageManager:
                 obj.storage_dict[field] = path
 
         return obj
+
+
+class StorageHelper:
+    def __init__(self, obj, manager: StorageManager, obj_id: str):
+        self.obj = obj
+        self.manager = manager
+        self.obj_id = obj_id
+
+    def save(self):
+        self.manager.save(self.obj, self.obj_id)
+
+    def load(self):
+        loaded = self.manager.load(self.obj.__class__, self.obj_id)
+        self.obj.__dict__.update(loaded.__dict__)
+        if hasattr(loaded, 'storage_dict'):
+            self.obj.storage_dict = loaded.storage_dict
