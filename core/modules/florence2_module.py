@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 from typing import List, Optional
 from PIL import Image  # 缺少这一行
-from core.imgdata.image_data import ImageParseItem
+from core.imgdata.image_data import ImageParseUnit
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -46,11 +46,11 @@ class Florence2Module(EnricherModule):
     # reference: https://github.com/anyantudre/Florence-2-Vision-Language-Model
     def parse(
         self,
-        objects: List[ImageParseItem],
+        objects: List[ImageParseUnit],
         prompt: str = "<DETAILED_CAPTION>",
         filter: str = "bbox",  # 可选：bbox / mask / image
         **kwargs
-    ) -> List[ImageParseItem]:
+    ) -> List[ImageParseUnit]:
         to_pil = ToPILImage()
         prompt = prompt
         for obj in objects:
@@ -89,7 +89,7 @@ class Florence2Module(EnricherModule):
             text = self.processor.tokenizer.decode(
                 output_ids[0], skip_special_tokens=True
             )
-            obj.enrich(source_module=self.source_name, score=-1, text=text)
+            obj.enrich_text(source_module=self.source_name, score=-1, text=text)
 
         return objects
 

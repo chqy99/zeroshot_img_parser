@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import numpy as np
 from typing import List
 
-from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseUnit, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -31,7 +31,7 @@ class YoloModule(BaseModule):
         boxes = result.boxes
         names = result.names  # {0: 'icon'}
 
-        parse_items: List[ImageParseItem] = []
+        parse_units: List[ImageParseUnit] = []
 
         max_area = kwargs.get("max_area", None)  # 用户可指定面积上限
 
@@ -45,12 +45,12 @@ class YoloModule(BaseModule):
             if max_area is not None and bbox.area() > max_area:
                 continue  # 跳过过大的框
 
-            item = ImageParseItem(
+            unit = ImageParseUnit(
                 image=image, source_module="yolo", score=conf, bbox=bbox, type="region", label=label
             )
-            parse_items.append(item)
+            parse_units.append(unit)
 
-        return ImageParseResult(image=image, items=parse_items)
+        return ImageParseResult(image=image, units=parse_units)
 
 
 @ModuleFactory.register_module("yolo")

@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from typing import List
 
-from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseUnit, ImageParseResult
 from core.imgtools.process_utils import ProcessUtils
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
@@ -35,8 +35,8 @@ class SamModule(BaseModule):
             # bbox_input = item["bbox"], 不使用解析的 bbox
             bbox = BBox.mask_to_bbox(mask)
             score = item["stability_score"]
-            parse_res.items.append(
-                ImageParseItem(
+            parse_res.units.append(
+                ImageParseUnit(
                     image=image,
                     source_module="sam2",
                     score=score,
@@ -49,7 +49,7 @@ class SamModule(BaseModule):
 
     def parse_with_prompts(
         self, image: np.ndarray, prompts=None, **kwargs
-    ) -> ImageParseItem:
+    ) -> ImageParseUnit:
         self.predictor.set_image(image)
         with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
             if prompts is not None:
@@ -59,7 +59,7 @@ class SamModule(BaseModule):
 
         max_index = np.argmax(scores)
         bbox = BBox.mask_to_bbox(masks[max_index])
-        return ImageParseItem(
+        return ImageParseUnit(
             image, "sam2", scores[max_index], bbox, masks[max_index], type="instance"
         )
 

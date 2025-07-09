@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 from PIL import Image
-from core.imgdata.image_data import ImageParseResult, ImageParseItem
+from core.imgdata.image_data import ImageParseResult, ImageParseUnit
 from core.modules.module_factory import ModuleFactory
 from core.imgtools import visualizer
 
@@ -87,7 +87,7 @@ def test_clip(img_path, output_mode="print", output_path=None):
 
     clipModule = ModuleFactory.get_module("clip")
     image = np.array(Image.open(img_path))
-    result = clipModule.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    result = clipModule.parse([ImageParseUnit(image=image, bbox=None, source_module="")], filter="image")
     print(result)
 
 
@@ -97,7 +97,7 @@ def test_florence2(img_path, output_mode="print", output_path=None):
 
     florence2Module = ModuleFactory.get_module("florence2")
     image = np.array(Image.open(img_path))
-    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    result = florence2Module.parse([ImageParseUnit(image=image, bbox=None, source_module="")], filter="image")
     print(result)
 
 
@@ -107,7 +107,7 @@ def test_florence2_icon(img_path, output_mode="print", output_path=None):
 
     florence2Module = ModuleFactory.get_module("florence2_icon")
     image = np.array(Image.open(img_path))
-    result = florence2Module.parse([ImageParseItem(image, "", 0, None)], filter="image")
+    result = florence2Module.parse([ImageParseUnit(image=image, bbox=None, source_module="")], filter="image")
     print(result)
 
 

@@ -3,7 +3,7 @@ from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 import numpy as np
 from typing import List
 from PIL import Image
-from core.imgdata.image_data import ImageParseItem
+from core.imgdata.image_data import ImageParseUnit
 from core.modules.base import EnricherModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -34,10 +34,10 @@ class ClipModule(EnricherModule):
 
     def parse(
         self,
-        objects: List[ImageParseItem],
+        objects: List[ImageParseUnit],
         filter: str = "bbox",  # 可选：bbox / mask / image
         **kwargs
-    ) -> List[ImageParseItem]:
+    ) -> List[ImageParseUnit]:
         for obj in objects:
             # --- 选择区域图像 ---
             if filter == "mask":
@@ -54,7 +54,7 @@ class ClipModule(EnricherModule):
                 )
 
             label, score = self._classify(image)
-            obj.enrich(source_module="clip", score=score, label=label)
+            obj.enrich_label(source_module="clip", score=score, label=label)
         return objects
 
     def _classify(self, image: np.ndarray):

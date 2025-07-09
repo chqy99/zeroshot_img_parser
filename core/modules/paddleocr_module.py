@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
 import numpy as np
 from typing import List
-from core.imgdata.image_data import BBox, ImageParseItem, ImageParseResult
+from core.imgdata.image_data import BBox, ImageParseUnit, ImageParseResult
 from core.modules.base import BaseModule
 from core.modules.model_config import ModelLoader
 from core.modules.module_factory import ModuleFactory
@@ -48,8 +48,8 @@ class PaddleOCRModule(BaseModule):
             if score_threshold is not None and score[i] < score_threshold:
                 continue
 
-            res.items.append(
-                ImageParseItem(
+            res.units.append(
+                ImageParseUnit(
                     image=image, source_module="paddleocr", score=score[i], bbox=bbox, type="ocr", text=text[i]
                 )
             )

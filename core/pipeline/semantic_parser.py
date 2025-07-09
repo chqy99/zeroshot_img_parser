@@ -28,7 +28,7 @@ class SemanticParser(PipelineParser):
 
         coverage_threshold = kwargs.get("coverage_threshold", 0.9)
 
-        # 3. 使用 Florence2 对所有 SAM2 区域做语义丰富（假设 florence2_module 接受 ImageParseItem 列表）
+        # 3. 使用 Florence2 对所有 SAM2 区域做语义丰富（假设 florence2_module 接受 ImageParseUnit 列表）
         florence_module: Florence2Module = self.get_module("florence2")
         flor_items = florence_module.parse(sam_items, filter="mask", **kwargs)
 

@@ -5,7 +5,7 @@ import math
 import matplotlib.pyplot as plt
 from typing import List, Optional
 from PIL import Image, ImageDraw
-from core.imgdata.image_data import ImageParseItem, ImageParseResult
+from core.imgdata.image_data import ImageParseUnit, ImageParseResult
 
 # ======================== Palette ========================
 
@@ -93,7 +93,7 @@ def composite_overlap_image(
 
 
 def visualize_parse_item(
-    item: ImageParseItem,
+    item: ImageParseUnit,
     show_mask: bool = True,
     show_bbox: bool = True,
     palette: Optional[List] = None,

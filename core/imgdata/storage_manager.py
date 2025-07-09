@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+from typing import Optional
 from abc import ABC, abstractmethod
 
 # ------------------------ 装饰器 ------------------------
@@ -32,23 +33,6 @@ class StorageHandler(ABC):
     @abstractmethod
     def can_handle_by_name(self, type_name: str):
         pass
-
-
-# ------------------------ Numpy Handler 示例 ------------------------
-
-class NumpyHandler(StorageHandler):
-    def save(self, value, path):
-        np.save(path, value)
-
-    def load(self, path):
-        return np.load(path, allow_pickle=True)
-
-    def can_handle(self, value):
-        return isinstance(value, np.ndarray)
-
-    def can_handle_by_name(self, type_name: str):
-        return type_name == 'ndarray'
-
 
 # ------------------------ Storage Config ------------------------
 
@@ -157,10 +141,21 @@ class StorageManager:
 
 
 class StorageHelper:
-    def __init__(self, obj, manager: StorageManager, obj_id: str):
+    def __init__(self, obj, manager: StorageManager, obj_id: str,
+                 handlers: Optional[list] = None,
+                 include_fields: Optional[list] = None,
+                 exclude_fields: Optional[list] = None):
         self.obj = obj
         self.manager = manager
         self.obj_id = obj_id
+
+        if handlers:
+            for h in handlers:
+                self.manager.register_handler(h)
+
+        self.manager.register_storage_fields(obj.__class__,
+                                                include=include_fields,
+                                                exclude=exclude_fields)
 
     def save(self):
         self.manager.save(self.obj, self.obj_id)
