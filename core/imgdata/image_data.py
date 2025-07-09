@@ -121,13 +121,13 @@ class ImageParseUnit:
             "bbox": self.bbox.to_dict(),
             "source_module": self.source_module,
             "score": self.score,
+            "type": self.type,
             "text": self.text,
-            "selected_label": self.selected_label,
+            "label": self.label,
             "metadata": self.metadata,
             "storage_dict": self.storage_dict,
-            "bbox_image": encode_img(self.bbox_image),
-            "mask_image": encode_img(self.mask_image),
-            "image": encode_img(self.image),
+            "bbox_image": encode_img(self.get_bbox_image()),
+            "mask_image": encode_img(self.get_mask_image()),
             "mask": encode_img(self.mask.astype(np.uint8)) if self.mask is not None else None,
         }
 
@@ -135,23 +135,16 @@ class ImageParseUnit:
     def from_dict(cls, data: dict) -> "ImageParseUnit":
         """
         Deserializes an ImageParseUnit from a dictionary.
-        Base64-encoded image fields are converted back to NumPy arrays.
         """
-        def decode_img(b64):
-            return base64_to_np(b64) if b64 is not None else None
-
         return cls(
             bbox=BBox.from_dict(data["bbox"]),
             source_module=data["source_module"],
             score=data.get("score"),
+            type=data.get("type"),
             text=data.get("text"),
             selected_label=data.get("selected_label"),
             metadata=data.get("metadata", {}),
-            storage_dict=data.get("storage_dict", {}),
-            bbox_image=decode_img(data.get("bbox_image")),
-            mask_image=decode_img(data.get("mask_image")),
-            image=decode_img(data.get("image")),
-            mask=decode_img(data.get("mask")),
+            storage_dict=data.get("storage_dict", {})
         )
 
     def get_bbox_image(self) -> np.ndarray:

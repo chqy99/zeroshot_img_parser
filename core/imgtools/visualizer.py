@@ -165,8 +165,8 @@ def generate_html_for_result(
     headers_html = "".join(f"<th>{html.escape(field)}</th>" for field in show_fields)
 
     rows_html = ""
-    for item in result.items:
-        item_dict = item.to_dict(filter=["bbox_image", "mask_image"])
+    for item in result.units:
+        item_dict = item.to_dict()
 
         cells = []
         for field in show_fields:
