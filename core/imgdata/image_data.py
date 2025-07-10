@@ -3,6 +3,7 @@ import cv2
 from dataclasses import dataclass, field
 from typing import Optional, Union, List, Dict, Any, Literal
 import numpy as np
+import os
 from io import BytesIO
 from PIL import Image
 import datetime
@@ -11,6 +12,8 @@ import uuid
 # ----------------------------- ID Generator -----------------------------
 
 class IDGenerator:
+    _instance = None
+
     def __init__(
         self,
         prefix: str = "img",
@@ -23,6 +26,12 @@ class IDGenerator:
         self.use_uuid = use_uuid
         self.counter = counter
         self._counter_value = 0
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
     def next_id(self, suffix: Optional[str] = None) -> str:
         parts = [self.prefix]
@@ -42,9 +51,6 @@ class IDGenerator:
             parts.append(suffix)
 
         return "_".join(parts)
-
-# Global generator instance
-_id_generator = IDGenerator()
 
 
 def np_to_base64(img: np.ndarray, format: str = "PNG") -> str:
@@ -152,8 +158,30 @@ class ImageParseUnit:
 
     def get_uid(self) -> str:
         if not self.uid:
-            self.uid = _id_generator.next_id("unit")
+            self.uid = IDGenerator.instance().next_id("unit")
         return self.uid
+    
+    def get_bbox_image(self) -> np.ndarray:
+        """
+        Returns the cropped region of the image defined by the bounding box.
+        If not already cached, it computes and stores the result.
+        """
+        if self.bbox_image is None:
+            self.bbox_image = self.bbox.crop(self.image)
+        return self.bbox_image
+
+    def get_mask_image(self) -> Optional[np.ndarray]:
+        """
+        Returns the image region within the bounding box with the mask applied.
+        If not already cached, it computes and stores the result.
+        Returns None if mask is not available.
+        """
+        if self.mask_image is None and self.mask is not None:
+            x1, y1, x2, y2 = map(int, (self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2))
+            cropped_img = self.image[y1:y2, x1:x2]
+            cropped_mask = self.mask[y1:y2, x1:x2].astype(np.uint8)
+            self.mask_image = cv2.bitwise_and(cropped_img, cropped_img, mask=cropped_mask)
+        return self.mask_image
 
     def to_dict(self, image_filter: Optional[list] = None) -> dict:
         """
@@ -212,28 +240,12 @@ class ImageParseUnit:
         if "image" in image_filter and data.get("image"):
             obj.image = base64_to_np(data["image"])
         return obj
-
-    def get_bbox_image(self) -> np.ndarray:
+    
+    def to_vector_record(self) -> dict:
         """
-        Returns the cropped region of the image defined by the bounding box.
-        If not already cached, it computes and stores the result.
+        Return a lightweight dict for vector DB storage (no image fields).
         """
-        if self.bbox_image is None:
-            self.bbox_image = self.bbox.crop(self.image)
-        return self.bbox_image
-
-    def get_mask_image(self) -> Optional[np.ndarray]:
-        """
-        Returns the image region within the bounding box with the mask applied.
-        If not already cached, it computes and stores the result.
-        Returns None if mask is not available.
-        """
-        if self.mask_image is None and self.mask is not None:
-            x1, y1, x2, y2 = map(int, (self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2))
-            cropped_img = self.image[y1:y2, x1:x2]
-            cropped_mask = self.mask[y1:y2, x1:x2].astype(np.uint8)
-            self.mask_image = cv2.bitwise_and(cropped_img, cropped_img, mask=cropped_mask)
-        return self.mask_image
+        return self.to_dict([])
 
     def enrich_text(self, source_module: str, score: float, text: Optional[str], overwrite: bool = False):
         """
@@ -277,6 +289,37 @@ class ImageParseUnit:
             self.label = label
             self.metadata["label_enriched_by"] = source_module
             self.metadata[source_module + "_label_score"] = score
+
+    def save_image(self, base_dir: str, image_filter: Optional[list] = None):
+        """
+        Save selected image fields to disk using PIL. Update storage_dict with file paths.
+        image_filter: list of field names to save (e.g. ["mask", "mask_image", "bbox_image"])
+        Default: ["bboxs_image"]
+        """
+        image_filter = image_filter or ["bbox_image"]
+        os.makedirs(base_dir, exist_ok=True)
+        if not self.uid:
+            self.get_uid()
+        for field in image_filter:
+            arr = getattr(self, field, None)
+            if arr is not None:
+                file_path = os.path.join(base_dir, f"{self.uid}_{field}.png")
+                img = Image.fromarray(arr.astype("uint8"))
+                img.save(file_path)
+                self.storage_dict[f"{field}_path"] = file_path
+
+    def load_image(self, image_filter: Optional[list] = None):
+        """
+        Load selected image fields from disk using storage_dict and PIL.
+        image_filter: list of field names to load (e.g. ["mask", "mask_image", "bbox_image"])
+        Default: ["bboxs_image"]
+        """
+        image_filter = image_filter or ["bbox_image"]
+        for field in image_filter:
+            path = self.storage_dict.get(f"{field}_path")
+            if path:
+                arr = np.array(Image.open(path).convert("RGB"))
+                setattr(self, field, arr)
 
 
 # # ----------------------------- Group Type -----------------------------
@@ -393,7 +436,7 @@ class ImageParseResult:
 
     def get_uid(self) -> str:
         if not self.uid:
-            self.uid = _id_generator.next_id("result")
+            self.uid = IDGenerator.instance().next_id("result")
         return self.uid
 
     def get_bboxs_image(self) -> np.ndarray:
@@ -448,3 +491,93 @@ class ImageParseResult:
                 return None
             self.masks_image = self.image * (mask[..., None] > 0)
         return self.masks_image
+
+
+    def to_dict(self, image_filter: Optional[list] = None, unit_image_filter: Optional[list] = None) -> dict:
+        """
+        Serialize the result, including units (with filter), and optionally image fields.
+        """
+        image_filter = image_filter or ["image"]
+        d = {
+            "units": [u.to_dict(image_filter=unit_image_filter) for u in self.units],
+            "summary_text": self.summary_text,
+            "metadata": self.metadata,
+            "storage_dict": self.storage_dict,
+            "uid": self.uid,
+        }
+        if "image" in image_filter and self.image is not None:
+            d["image"] = np_to_base64(self.image)
+        if "bboxs_image" in image_filter and self.bboxs_image is not None:
+            d["bboxs_image"] = np_to_base64(self.bboxs_image)
+        if "masks" in image_filter and self.masks is not None:
+            d["masks"] = np_to_base64(self.masks)
+        if "masks_image" in image_filter and self.masks_image is not None:
+            d["masks_image"] = np_to_base64(self.masks_image)
+        return d
+
+    @classmethod
+    def from_dict(cls, data: dict, image_filter: Optional[list] = None, unit_image_filter: Optional[list] = None) -> "ImageParseResult":
+        """
+        Deserialize from dict, including units and optionally image fields.
+        """
+        image_filter = image_filter or ["image"]
+        image = base64_to_np(data["image"]) if "image" in image_filter and data.get("image") else None
+        obj = cls(
+            image=image,
+            units=[ImageParseUnit.from_dict(u, image_filter=unit_image_filter) for u in data.get("units", [])],
+            summary_text=data.get("summary_text"),
+            metadata=data.get("metadata", {}),
+            storage_dict=data.get("storage_dict", {}),
+            uid=data.get("uid"),
+        )
+        if "bboxs_image" in image_filter and data.get("bboxs_image"):
+            obj.bboxs_image = base64_to_np(data["bboxs_image"])
+        if "masks" in image_filter and data.get("masks"):
+            obj.masks = base64_to_np(data["masks"])
+        if "masks_image" in image_filter and data.get("masks_image"):
+            obj.masks_image = base64_to_np(data["masks_image"])
+        return obj
+
+    def to_vector_records(self) -> dict:
+        """
+        Return a dict for vector DB storage: result-level info + unit uid list.
+        """
+        return {
+            "uid": self.get_uid(),
+            "summary_text": self.summary_text,
+            "metadata": self.metadata,
+            "storage_dict": self.storage_dict,
+            "unit_uids": [u.get_uid() for u in self.units],
+        }
+    
+
+    def save_image(self, base_dir: str, image_filter: Optional[list] = None):
+        """
+        Save selected result-level images to disk using PIL. Update storage_dict with file paths.
+        image_filter: list of field names to save (e.g. ["image", "bboxs_image", "masks", "masks_image"])
+        Default: ["image", "bboxs_image"]
+        """
+        image_filter = image_filter or ["image", "bboxs_image"]
+        os.makedirs(base_dir, exist_ok=True)
+        if not self.uid:
+            self.get_uid()
+        for field in image_filter:
+            arr = getattr(self, field, None)
+            if arr is not None:
+                file_path = os.path.join(base_dir, f"{self.uid}_{field}.png")
+                img = Image.fromarray(arr.astype("uint8"))
+                img.save(file_path)
+                self.storage_dict[f"{field}_path"] = file_path
+
+    def load_image(self, image_filter: Optional[list] = None):
+        """
+        Load selected result-level images from disk using storage_dict and PIL.
+        image_filter: list of field names to load (e.g. ["image", "bboxs_image", "masks", "masks_image"])
+        Default: ["image", "bboxs_image"]
+        """
+        image_filter = image_filter or ["image", "bboxs_image"]
+        for field in image_filter:
+            path = self.storage_dict.get(f"{field}_path")
+            if path:
+                arr = np.array(Image.open(path).convert("RGB"))
+                setattr(self, field, arr)
