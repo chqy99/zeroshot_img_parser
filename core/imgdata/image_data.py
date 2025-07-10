@@ -5,6 +5,46 @@ from typing import Optional, Union, List, Dict, Any, Literal
 import numpy as np
 from io import BytesIO
 from PIL import Image
+import datetime
+import uuid
+
+# ----------------------------- ID Generator -----------------------------
+
+class IDGenerator:
+    def __init__(
+        self,
+        prefix: str = "img",
+        use_date: bool = True,
+        use_uuid: bool = True,
+        counter: bool = False,
+    ):
+        self.prefix = prefix
+        self.use_date = use_date
+        self.use_uuid = use_uuid
+        self.counter = counter
+        self._counter_value = 0
+
+    def next_id(self, suffix: Optional[str] = None) -> str:
+        parts = [self.prefix]
+
+        if self.use_date:
+            date_str = datetime.datetime.now().strftime("%Y%m%d")
+            parts.append(date_str)
+
+        if self.counter:
+            parts.append(f"{self._counter_value:04d}")
+            self._counter_value += 1
+
+        if self.use_uuid:
+            parts.append(uuid.uuid4().hex[:8])
+
+        if suffix:
+            parts.append(suffix)
+
+        return "_".join(parts)
+
+# Global generator instance
+_id_generator = IDGenerator()
 
 
 def np_to_base64(img: np.ndarray, format: str = "PNG") -> str:
@@ -108,16 +148,21 @@ class ImageParseUnit:
 
     metadata: Dict[str, Any] = field(default_factory=dict)
     storage_dict: Dict[str, Any] = field(default_factory=dict)
+    uid: Optional[str] = None
 
-    def to_dict(self) -> dict:
+    def get_uid(self) -> str:
+        if not self.uid:
+            self.uid = _id_generator.next_id("unit")
+        return self.uid
+
+    def to_dict(self, image_filter: Optional[list] = None) -> dict:
         """
         Serializes the object to a dictionary.
-        NumPy image arrays are converted to base64-encoded strings.
+        NumPy image arrays are converted to base64-encoded strings for selected fields.
+        image_filter: list of field names (e.g. ["image", "bbox_image", "mask_image", "mask"])
         """
-        def encode_img(img):
-            return np_to_base64(img) if img is not None else None
-
-        return {
+        image_filter = image_filter or ["bbox_image", "mask_image", "mask"]
+        d = {
             "bbox": self.bbox.to_dict(),
             "source_module": self.source_module,
             "score": self.score,
@@ -126,26 +171,47 @@ class ImageParseUnit:
             "label": self.label,
             "metadata": self.metadata,
             "storage_dict": self.storage_dict,
-            "bbox_image": encode_img(self.get_bbox_image()),
-            "mask_image": encode_img(self.get_mask_image()),
-            "mask": encode_img(self.mask.astype(np.uint8)) if self.mask is not None else None,
+            "uid": self.uid,
         }
+        # Handle ndarray fields
+        if "bbox_image" in image_filter:
+            d["bbox_image"] = np_to_base64(self.get_bbox_image()) if self.get_bbox_image() is not None else None
+        if "mask_image" in image_filter:
+            d["mask_image"] = np_to_base64(self.get_mask_image()) if self.get_mask_image() is not None else None
+        if "mask" in image_filter:
+            d["mask"] = np_to_base64(self.mask.astype(np.uint8)) if self.mask is not None else None
+        if "image" in image_filter:
+            d["image"] = np_to_base64(self.image) if self.image is not None else None
+        return d
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ImageParseUnit":
+    def from_dict(cls, data: dict, image_filter: Optional[list] = None) -> "ImageParseUnit":
         """
         Deserializes an ImageParseUnit from a dictionary.
+        image_filter: list of field names to decode from base64 (e.g. ["image", "bbox_image", "mask_image", "mask"])
         """
-        return cls(
+        image_filter = image_filter or ["bbox_image", "mask_image", "mask"]
+        obj = cls(
             bbox=BBox.from_dict(data["bbox"]),
             source_module=data["source_module"],
             score=data.get("score"),
             type=data.get("type"),
             text=data.get("text"),
-            selected_label=data.get("selected_label"),
+            label=data.get("label"),
             metadata=data.get("metadata", {}),
-            storage_dict=data.get("storage_dict", {})
+            storage_dict=data.get("storage_dict", {}),
+            uid=data.get("uid"),
         )
+        # Handle ndarray fields
+        if "bbox_image" in image_filter and data.get("bbox_image"):
+            obj.bbox_image = base64_to_np(data["bbox_image"])
+        if "mask_image" in image_filter and data.get("mask_image"):
+            obj.mask_image = base64_to_np(data["mask_image"])
+        if "mask" in image_filter and data.get("mask"):
+            obj.mask = base64_to_np(data["mask"])
+        if "image" in image_filter and data.get("image"):
+            obj.image = base64_to_np(data["image"])
+        return obj
 
     def get_bbox_image(self) -> np.ndarray:
         """
@@ -213,77 +279,84 @@ class ImageParseUnit:
             self.metadata[source_module + "_label_score"] = score
 
 
-# ----------------------------- Group Type -----------------------------
+# # ----------------------------- Group Type -----------------------------
 
-GroupType = Literal[
-    # ------ ① Spatial / Geometric Relations ------
-    "same_spatial",     # Occupying the same or nearly identical position.
-    "overlap",          # Regions that partially intersect.
-    "contain",          # One region entirely contains another.
-    "adjacent",         # Positioned side-by-side or in close proximity.
-    "align",            # Aligned along the same axis (horizontal or vertical).
+# GroupType = Literal[
+#     # ------ ① Spatial / Geometric Relations ------
+#     "same_spatial",     # Occupying the same or nearly identical position.
+#     "overlap",          # Regions that partially intersect.
+#     "contain",          # One region entirely contains another.
+#     "adjacent",         # Positioned side-by-side or in close proximity.
+#     "align",            # Aligned along the same axis (horizontal or vertical).
 
-    # ------ ② Structural / Layout-Based Groupings ------
-    "sequence",         # Ordered items (e.g., rows, form fields, timeline).
-    "parent_child",     # Nested or hierarchical UI blocks (e.g., label + input).
-    "functional_block", # Belonging to the same logical UI module (e.g., login form).
-    "text_flow",        # Flow of text across lines or regions (e.g., paragraph).
-    "repetition",       # Visually repeated units (e.g., list items, cards).
+#     # ------ ② Structural / Layout-Based Groupings ------
+#     "sequence",         # Ordered items (e.g., rows, form fields, timeline).
+#     "parent_child",     # Nested or hierarchical UI blocks (e.g., label + input).
+#     "functional_block", # Belonging to the same logical UI module (e.g., login form).
+#     "text_flow",        # Flow of text across lines or regions (e.g., paragraph).
+#     "repetition",       # Visually repeated units (e.g., list items, cards).
 
-    # ------ ③ Semantic / Appearance-Based Groupings ------
-    "same_semantics",   # Conceptually similar roles (e.g., all are "buttons").
-    "grouped_by_label", # Same assigned label/class name.
-    "grouped_by_style", # Visual similarity in font, iconography, or shape.
-    "grouped_by_color", # Similar color scheme or background color.
+#     # ------ ③ Semantic / Appearance-Based Groupings ------
+#     "same_semantics",   # Conceptually similar roles (e.g., all are "buttons").
+#     "grouped_by_label", # Same assigned label/class name.
+#     "grouped_by_style", # Visual similarity in font, iconography, or shape.
+#     "grouped_by_color", # Similar color scheme or background color.
 
-    # ------ ④ Fallback ------
-    "unknown"           # Type could not be inferred.
-]
+#     # ------ ④ Fallback ------
+#     "unknown"           # Type could not be inferred.
+# ]
 
 
-@dataclass
-class ImageParseGroup:
-    """
-    Represents a semantic group composed of ImageParseUnits and/or nested ImageParseGroups.
+# @dataclass
+# class ImageParseGroup:
+#     """
+#     Represents a semantic group composed of ImageParseUnits and/or nested ImageParseGroups.
 
-    This class enables higher-level semantic structure by grouping related visual regions,
-    either based on spatial relations (e.g. alignment), functional logic (e.g. layout grouping),
-    or inferred semantics (e.g. buttons with same label).
+#     This class enables higher-level semantic structure by grouping related visual regions,
+#     either based on spatial relations (e.g. alignment), functional logic (e.g. layout grouping),
+#     or inferred semantics (e.g. buttons with same label).
 
-    Attributes:
-        items (List[Union[ImageParseUnit, ImageParseGroup]]):
-            The atomic or nested members that form this group.
+#     Attributes:
+#         items (List[Union[ImageParseUnit, ImageParseGroup]]):
+#             The atomic or nested members that form this group.
 
-        type (GroupType):
-            The logic or rule that defines how items are grouped.
-            See `GroupType` for allowed values.
+#         type (GroupType):
+#             The logic or rule that defines how items are grouped.
+#             See `GroupType` for allowed values.
 
-        group_text (Optional[str]):
-            A high-level semantic summary of the group.
-            Example: "Settings Panel", "Form Section", or "Action Buttons".
+#         group_text (Optional[str]):
+#             A high-level semantic summary of the group.
+#             Example: "Settings Panel", "Form Section", or "Action Buttons".
 
-        spatial_text (Optional[str]):
-            A spatially aware or layout-derived textual description.
-            Example: "Top-right aligned menu", "Left column entries".
+#         spatial_text (Optional[str]):
+#             A spatially aware or layout-derived textual description.
+#             Example: "Top-right aligned menu", "Left column entries".
 
-        metadata (Dict[str, Any]):
-            Custom annotations for reasoning or rules behind grouping.
-            May include flags, sources, parser notes, or user tags.
+#         metadata (Dict[str, Any]):
+#             Custom annotations for reasoning or rules behind grouping.
+#             May include flags, sources, parser notes, or user tags.
 
-        storage_dict (Dict[str, Any]):
-            A system-reserved dictionary used to store group-related identifiers,
-            such as:
-                - 'uids': list of unit IDs belonging to the group.
-                - 'group_vector_id': ID for the group embedding in vector DB.
-    """
-    items: List[Union["ImageParseUnit", "ImageParseGroup"]]
-    type: GroupType = "unknown"
+#         storage_dict (Dict[str, Any]):
+#             A system-reserved dictionary used to store group-related identifiers,
+#             such as:
+#                 - 'uids': list of unit IDs belonging to the group.
+#                 - 'group_vector_id': ID for the group embedding in vector DB.
+#     """
 
-    group_text: Optional[str] = None
-    spatial_text: Optional[str] = None
+#     items: List[Union["ImageParseUnit", "ImageParseGroup"]]
+#     type: GroupType = "unknown"
 
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    storage_dict: Dict[str, Any] = field(default_factory=dict)
+#     group_text: Optional[str] = None
+#     spatial_text: Optional[str] = None
+
+#     metadata: Dict[str, Any] = field(default_factory=dict)
+#     storage_dict: Dict[str, Any] = field(default_factory=dict)
+#     uid: Optional[str] = None
+
+#     def get_uid(self) -> str:
+#         if not self.uid:
+#             self.uid = _id_generator.next_id("group")
+#         return self.uid
 
 
 @dataclass
@@ -302,10 +375,11 @@ class ImageParseResult:
         metadata (Dict[str, Any]): Optional metadata (e.g., parser source, timestamp, settings).
         storage_dict (Dict[str, Any]): Stores image/embedding UID or related persistent info.
     """
+
     image: np.ndarray
 
     units: List["ImageParseUnit"] = field(default_factory=list)
-    groups: List["ImageParseGroup"] = field(default_factory=list)
+    # groups: List["ImageParseGroup"] = field(default_factory=list)
 
     summary_text: Optional[str] = None
 
@@ -315,6 +389,12 @@ class ImageParseResult:
 
     metadata: Dict[str, Any] = field(default_factory=dict)
     storage_dict: Dict[str, Any] = field(default_factory=dict)
+    uid: Optional[str] = None
+
+    def get_uid(self) -> str:
+        if not self.uid:
+            self.uid = _id_generator.next_id("result")
+        return self.uid
 
     def get_bboxs_image(self) -> np.ndarray:
         """

@@ -3,6 +3,9 @@ import json
 import numpy as np
 from typing import Optional
 from abc import ABC, abstractmethod
+import uuid
+import datetime
+from PIL import Image
 
 # ------------------------ 装饰器 ------------------------
 
@@ -13,6 +16,7 @@ def storage_field(save: bool = True):
         f._storage_field_save = save
         return f
     return wrapper
+
 
 
 # ------------------------ Storage Handler 抽象类 ------------------------
@@ -33,6 +37,33 @@ class StorageHandler(ABC):
     @abstractmethod
     def can_handle_by_name(self, type_name: str):
         pass
+
+
+# ------------------------ Image Storage Handler ------------------------
+
+class ImageStorageHandler(StorageHandler):
+    """Handles saving/loading images using PIL."""
+    def save(self, value, path):
+        if isinstance(value, np.ndarray):
+            img = Image.fromarray(value.astype('uint8'))
+            img.save(path)
+        elif isinstance(value, Image.Image):
+            value.save(path)
+        else:
+            raise TypeError(f"Unsupported type for image saving: {type(value)}")
+
+    def load(self, path):
+        img = Image.open(path).convert('RGB')
+        return np.array(img)
+
+    def can_handle(self, value):
+        # Return None if not handled, else return nothing (None)
+        if not isinstance(value, (np.ndarray, Image.Image)):
+            return None
+
+    def can_handle_by_name(self, type_name: str):
+        if type_name not in ("ndarray", "Image"):
+            return None
 
 # ------------------------ Storage Config ------------------------
 
@@ -165,3 +196,34 @@ class StorageHelper:
         self.obj.__dict__.update(loaded.__dict__)
         if hasattr(loaded, 'storage_dict'):
             self.obj.storage_dict = loaded.storage_dict
+
+class IDGenerator:
+    def __init__(
+        self,
+        prefix: str = "item",
+        use_date: bool = True,
+        use_uuid: bool = True,
+        counter: bool = False,
+    ):
+        self.prefix = prefix
+        self.use_date = use_date
+        self.use_uuid = use_uuid
+        self.counter = counter
+        self._counter_value = 0
+
+    def next_id(self) -> str:
+        parts = [self.prefix]
+
+        if self.use_date:
+            date_str = datetime.datetime.now().strftime("%Y%m%d")
+            parts.append(date_str)
+
+        if self.counter:
+            parts.append(f"{self._counter_value:04d}")
+            self._counter_value += 1
+
+        if self.use_uuid:
+            parts.append(uuid.uuid4().hex[:8])
+
+        return "_".join(parts)
+    
