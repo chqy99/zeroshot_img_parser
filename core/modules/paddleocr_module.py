@@ -50,7 +50,12 @@ class PaddleOCRModule(BaseModule):
 
             res.units.append(
                 ImageParseUnit(
-                    image=image, source_module="paddleocr", score=score[i], bbox=bbox, type="ocr", text=text[i]
+                    image=image,
+                    source_module="paddleocr",
+                    score=score[i],
+                    bbox=bbox,
+                    type="ocr",
+                    text=text[i],
                 )
             )
         return res

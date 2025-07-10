@@ -1,0 +1,5 @@
+# 图像解析内存与向量数据库配置
+base_dir: ./img_memory
+vector_db_dir: ./.chroma_db
+collection_name: img_parse_units
+image_save_fields: ["bbox_image", "mask_image"]

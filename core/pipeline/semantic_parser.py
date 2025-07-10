@@ -41,7 +41,9 @@ class SemanticParser(PipelineParser):
 
         for sam_item in sam_items:
             for ocr_item in ocr_items:
-                if StatisticsUtils.is_bbox_covered_by_other(ocr_item.bbox, sam_item.bbox, coverage_threshold):
+                if StatisticsUtils.is_bbox_covered_by_other(
+                    ocr_item.bbox, sam_item.bbox, coverage_threshold
+                ):
                     # 有覆盖，比较面积大小
                     if ocr_item.bbox.area() > sam_item.bbox.area():
                         # OCR 较大，用 SAM enrich OCR，删掉 SAM项

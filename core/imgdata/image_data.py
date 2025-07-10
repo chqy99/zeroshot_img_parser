@@ -11,6 +11,7 @@ import uuid
 
 # ----------------------------- ID Generator -----------------------------
 
+
 class IDGenerator:
     _instance = None
 
@@ -60,11 +61,13 @@ def np_to_base64(img: np.ndarray, format: str = "PNG") -> str:
     pil_img.save(buffer, format=format)
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
+
 def base64_to_np(b64_str: str) -> np.ndarray:
     """Convert a base64 string back to a NumPy image."""
     buffer = BytesIO(base64.b64decode(b64_str))
     pil_img = Image.open(buffer).convert("RGB")
     return np.array(pil_img)
+
 
 @dataclass
 class BBox:
@@ -160,7 +163,7 @@ class ImageParseUnit:
         if not self.uid:
             self.uid = IDGenerator.instance().next_id("unit")
         return self.uid
-    
+
     def get_bbox_image(self) -> np.ndarray:
         """
         Returns the cropped region of the image defined by the bounding box.
@@ -177,10 +180,14 @@ class ImageParseUnit:
         Returns None if mask is not available.
         """
         if self.mask_image is None and self.mask is not None:
-            x1, y1, x2, y2 = map(int, (self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2))
+            x1, y1, x2, y2 = map(
+                int, (self.bbox.x1, self.bbox.y1, self.bbox.x2, self.bbox.y2)
+            )
             cropped_img = self.image[y1:y2, x1:x2]
             cropped_mask = self.mask[y1:y2, x1:x2].astype(np.uint8)
-            self.mask_image = cv2.bitwise_and(cropped_img, cropped_img, mask=cropped_mask)
+            self.mask_image = cv2.bitwise_and(
+                cropped_img, cropped_img, mask=cropped_mask
+            )
         return self.mask_image
 
     def to_dict(self, image_filter: Optional[list] = None) -> dict:
@@ -203,17 +210,31 @@ class ImageParseUnit:
         }
         # Handle ndarray fields
         if "bbox_image" in image_filter:
-            d["bbox_image"] = np_to_base64(self.get_bbox_image()) if self.get_bbox_image() is not None else None
+            d["bbox_image"] = (
+                np_to_base64(self.get_bbox_image())
+                if self.get_bbox_image() is not None
+                else None
+            )
         if "mask_image" in image_filter:
-            d["mask_image"] = np_to_base64(self.get_mask_image()) if self.get_mask_image() is not None else None
+            d["mask_image"] = (
+                np_to_base64(self.get_mask_image())
+                if self.get_mask_image() is not None
+                else None
+            )
         if "mask" in image_filter:
-            d["mask"] = np_to_base64(self.mask.astype(np.uint8)) if self.mask is not None else None
+            d["mask"] = (
+                np_to_base64(self.mask.astype(np.uint8))
+                if self.mask is not None
+                else None
+            )
         if "image" in image_filter:
             d["image"] = np_to_base64(self.image) if self.image is not None else None
         return d
 
     @classmethod
-    def from_dict(cls, data: dict, image_filter: Optional[list] = None) -> "ImageParseUnit":
+    def from_dict(
+        cls, data: dict, image_filter: Optional[list] = None
+    ) -> "ImageParseUnit":
         """
         Deserializes an ImageParseUnit from a dictionary.
         image_filter: list of field names to decode from base64 (e.g. ["image", "bbox_image", "mask_image", "mask"])
@@ -240,14 +261,20 @@ class ImageParseUnit:
         if "image" in image_filter and data.get("image"):
             obj.image = base64_to_np(data["image"])
         return obj
-    
+
     def to_vector_record(self) -> dict:
         """
         Return a lightweight dict for vector DB storage (no image fields).
         """
         return self.to_dict([])
 
-    def enrich_text(self, source_module: str, score: float, text: Optional[str], overwrite: bool = False):
+    def enrich_text(
+        self,
+        source_module: str,
+        score: float,
+        text: Optional[str],
+        overwrite: bool = False,
+    ):
         """
         Enriches the `text` field of the parsing unit.
 
@@ -268,8 +295,13 @@ class ImageParseUnit:
             self.metadata["text_enriched_by"] = source_module
             self.metadata[source_module + "_text_score"] = score
 
-
-    def enrich_label(self, source_module: str, score: float, label: Optional[str], overwrite: bool = False):
+    def enrich_label(
+        self,
+        source_module: str,
+        score: float,
+        label: Optional[str],
+        overwrite: bool = False,
+    ):
         """
         Enriches the `label` field of the parsing unit.
 
@@ -492,8 +524,11 @@ class ImageParseResult:
             self.masks_image = self.image * (mask[..., None] > 0)
         return self.masks_image
 
-
-    def to_dict(self, image_filter: Optional[list] = None, unit_image_filter: Optional[list] = None) -> dict:
+    def to_dict(
+        self,
+        image_filter: Optional[list] = None,
+        unit_image_filter: Optional[list] = None,
+    ) -> dict:
         """
         Serialize the result, including units (with filter), and optionally image fields.
         """
@@ -516,15 +551,27 @@ class ImageParseResult:
         return d
 
     @classmethod
-    def from_dict(cls, data: dict, image_filter: Optional[list] = None, unit_image_filter: Optional[list] = None) -> "ImageParseResult":
+    def from_dict(
+        cls,
+        data: dict,
+        image_filter: Optional[list] = None,
+        unit_image_filter: Optional[list] = None,
+    ) -> "ImageParseResult":
         """
         Deserialize from dict, including units and optionally image fields.
         """
         image_filter = image_filter or ["image"]
-        image = base64_to_np(data["image"]) if "image" in image_filter and data.get("image") else None
+        image = (
+            base64_to_np(data["image"])
+            if "image" in image_filter and data.get("image")
+            else None
+        )
         obj = cls(
             image=image,
-            units=[ImageParseUnit.from_dict(u, image_filter=unit_image_filter) for u in data.get("units", [])],
+            units=[
+                ImageParseUnit.from_dict(u, image_filter=unit_image_filter)
+                for u in data.get("units", [])
+            ],
             summary_text=data.get("summary_text"),
             metadata=data.get("metadata", {}),
             storage_dict=data.get("storage_dict", {}),
@@ -549,7 +596,6 @@ class ImageParseResult:
             "storage_dict": self.storage_dict,
             "unit_uids": [u.get_uid() for u in self.units],
         }
-    
 
     def save_image(self, base_dir: str, image_filter: Optional[list] = None):
         """

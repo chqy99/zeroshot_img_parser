@@ -28,9 +28,7 @@ class StatisticsUtils:
 
     @staticmethod
     def is_bbox_covered_by_other(
-        bbox1: "BBox",
-        bbox2: "BBox",
-        coverage_threshold: float = 0.9
+        bbox1: "BBox", bbox2: "BBox", coverage_threshold: float = 0.9
     ) -> bool:
         """
         判断两个 bbox 中面积较小的那个 bbox 被另一个 bbox 覆盖的比例是否达到阈值。

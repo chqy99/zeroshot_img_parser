@@ -43,7 +43,9 @@ class CustomOmniParser(PipelineParser):
 
         for yolo_item in yolo_items:
             for ocr_item in ocr_items:
-                if StatisticsUtils.is_bbox_covered_by_other(ocr_item.bbox, yolo_item.bbox, coverage_threshold):
+                if StatisticsUtils.is_bbox_covered_by_other(
+                    ocr_item.bbox, yolo_item.bbox, coverage_threshold
+                ):
                     # 有覆盖，比较面积大小
                     if ocr_item.bbox.area() > yolo_item.bbox.area():
                         # OCR 较大，用 YOLO enrich OCR，删掉 YOLO项
@@ -56,11 +58,12 @@ class CustomOmniParser(PipelineParser):
 
         # 5. 剔除被标记删除的 OCR 和 YOLO
         ocr_items = [item for item in ocr_items if item not in ocr_to_remove]
-        yolo_items = [item for item in yolo_items if not item.metadata.get("to_remove", False)]
+        yolo_items = [
+            item for item in yolo_items if not item.metadata.get("to_remove", False)
+        ]
 
         # 6. 合并返回
         result.items.extend(ocr_items)
         result.items.extend(yolo_items)
 
         return result
-

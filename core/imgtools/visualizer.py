@@ -180,10 +180,14 @@ def generate_html_for_result(
             elif isinstance(val, list):
                 # 不截断，直接全部显示，支持换行
                 full_val = ", ".join(map(str, val))
-                cells.append(f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(full_val)}</td>')
+                cells.append(
+                    f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(full_val)}</td>'
+                )
             else:
                 # 普通文本支持换行
-                cells.append(f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(str(val))}</td>')
+                cells.append(
+                    f'<td style="word-break: break-word; white-space: pre-wrap;">{html.escape(str(val))}</td>'
+                )
 
         rows_html += "<tr>" + "".join(cells) + "</tr>"
 
