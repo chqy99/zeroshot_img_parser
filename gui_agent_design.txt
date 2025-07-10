@@ -1,0 +1,105 @@
+# GUI Agent 设计文档
+
+## 1. 总体目标
+- 实现一个以本地 workflow 自动化为主、LLM 兜底的智能 GUI 任务代理。
+- 支持自动抓取屏幕、图像解析、知识库检索、workflow 执行、异常兜底与告警。
+
+## 2. 系统架构
+
+```
++-------------------+
+|   任务目标输入    |
++-------------------+
+           |
+           v
++-------------------+
+|  屏幕截图采集模块 |
++-------------------+
+           |
+           v
++-------------------+
+| 图像解析/向量检索 |
++-------------------+
+           |
+           v
++-------------------+
+| workflow 检索与执行|
++-------------------+
+           |
+           v
++-------------------+
+|  动作知识库支持   |
++-------------------+
+           |
+           v
++-------------------+
+|   LLM 智能兜底    |
++-------------------+
+           |
+           v
++-------------------+
+|   失败告警/邮件   |
++-------------------+
+```
+
+## 3. 主要模块说明
+
+### 3.1 屏幕截图采集模块
+- 自动定时或按需抓取当前屏幕内容。
+- 推荐 pyautogui、mss、PIL 等库。
+
+### 3.2 图像解析与向量检索
+- 先用截图在本地向量数据库检索，未命中则走多模型图像解析 pipeline。
+- 解析结果自动入库。
+
+### 3.3 workflow 检索与执行
+- 解析结果+上下文在 workflow 数据库中检索匹配。
+- 匹配到则严格按 workflow 步骤自动执行（如 UI 自动化、脚本等）。
+- 动作知识库提供每步的具体实现模板。
+
+### 3.4 LLM 智能兜底
+- 仅在 workflow 无法覆盖或遇到异常时才调用。
+- LLM 输出结构化操作建议或补全 workflow 步骤。
+- 可选：人工审核后补全 workflow 数据库。
+
+### 3.5 失败告警
+- 每步操作有失败计数，超限自动邮件通知。
+
+## 4. 数据与知识库
+- 图像解析向量数据库：存储解析过的 UI 区块、文本、布局等。
+- 动作知识数据库：存储 UI 操作模板、API、预测信息。
+- 个人知识数据库（workflow）：存储任务规划、特殊情况处理规则。
+
+## 5. 运行主流程伪代码
+
+```
+def main(task_goal):
+    screenshot = auto_capture_screen()
+    parse_result = image_vector_db.query(screenshot) or image_parser.parse(screenshot)
+    context = build_context(parse_result, task_goal)
+    workflow = workflow_db.match(context)
+    if workflow:
+        for step in workflow['steps']:
+            success = execute_step(step)
+            if not success:
+                handle_failure(step, context)
+                break
+    else:
+        llm_suggestion = call_llm(context)
+        if llm_suggestion:
+            try_to_execute(llm_suggestion)
+        else:
+            send_alert_email("任务无法自动完成")
+```
+
+## 6. 下一步建议
+
+1. **实现/整理 workflow 数据库结构与检索接口**
+   - 设计 workflow 的存储格式（如 YAML/JSON/SQLite），支持模糊/上下文检索。
+   - 实现 workflow_db.match(context) 方法。
+2. 实现屏幕截图采集与图像解析的自动化流程。
+3. 设计动作知识库结构与接口。
+4. 设计 LLM 兜底接口（可选，后期接入）。
+5. 实现主流程调度脚本。
+
+建议优先完成第1步：**workflow 数据库结构与检索接口**，这是整个自动化的核心。
